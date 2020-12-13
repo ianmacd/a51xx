@@ -15,6 +15,11 @@
 #include "scsc_wlbtd.h"
 #endif
 
+#if defined(CONFIG_DEBUG_SNAPSHOT)
+#include <linux/uaccess.h>
+#include <linux/debug-snapshot.h>
+#endif
+
 #ifndef AID_MXPROC
 #define AID_MXPROC 0
 #endif
@@ -170,15 +175,31 @@ static ssize_t mx_procfs_mx_panic_read(struct file *file, char __user *user_buf,
 
 static ssize_t mx_procfs_mx_panic_write(struct file *file, const char __user *user_buf, size_t count, loff_t *ppos)
 {
+	char value = 0;
 	struct mxproc *mxproc = file->private_data;
 
+	OS_UNUSED_PARAMETER(value);
 	OS_UNUSED_PARAMETER(file);
 	OS_UNUSED_PARAMETER(user_buf);
 	OS_UNUSED_PARAMETER(count);
 	OS_UNUSED_PARAMETER(ppos);
 
+#if defined(CONFIG_DEBUG_SNAPSHOT) && defined(GO_S2D_ID)
+	if (count != 2)
+		return -EFAULT;
+	if (copy_from_user(&value, user_buf, 1))
+		return -EFAULT;
+	if (value == '3') {
+		SCSC_TAG_INFO(MX_PROC, "Manual Scandump");
+		dbg_snapshot_soc_do_dpm_policy(GO_S2D_ID);
+	} else if (mxproc) {
+		SCSC_TAG_INFO(MX_PROC, "Manual FW Panic");
+		mxman_force_panic(mxproc->mxman);
+	}
+#else
 	if (mxproc)
 		mxman_force_panic(mxproc->mxman);
+#endif
 	SCSC_TAG_INFO(MX_PROC, "OK\n");
 
 	return count;
@@ -505,8 +526,8 @@ static ssize_t mx_procfs_mx_release_read(struct file *file, char __user *user_bu
 
 	memset(buf, '\0', sizeof(buf));
 
-	bytes = snprintf(buf, sizeof(buf), "Release: %d.%d.%d.%d (f/w: %s)\n",
-		SCSC_RELEASE_PRODUCT, SCSC_RELEASE_ITERATION, SCSC_RELEASE_CANDIDATE, SCSC_RELEASE_POINT,
+	bytes = snprintf(buf, sizeof(buf), "Release: %d.%d.%d.%d.%d (f/w: %s)\n",
+		SCSC_RELEASE_PRODUCT, SCSC_RELEASE_ITERATION, SCSC_RELEASE_CANDIDATE, SCSC_RELEASE_POINT, SCSC_RELEASE_CUSTOMER,
 		build_id ? build_id : "unknown");
 
 	if (bytes > sizeof(buf))
@@ -531,7 +552,10 @@ static ssize_t mx_procfs_mx_ttid_read(struct file *file, char __user *user_buf, 
 
 	memset(buf, '\0', sizeof(buf));
 
-	bytes = snprintf(buf, sizeof(buf), "%s\n", id);
+	if (id)
+		bytes = snprintf(buf, sizeof(buf), "%s\n", id);
+	else
+		bytes = snprintf(buf, sizeof(buf), "%s\n", "FW_TTID not defined");
 
 	if (bytes > sizeof(buf))
 		bytes = sizeof(buf);

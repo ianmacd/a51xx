@@ -69,18 +69,20 @@ static int hip4_smapper_allocate_skb_buffer_entry(struct slsi_dev *sdev, struct 
 	struct sk_buff *skb;
 	int err;
 
-	skb = slsi_alloc_skb(bank->entry_size, GFP_ATOMIC);
+	skb = alloc_skb(bank->entry_size, GFP_ATOMIC);
 	if (!skb) {
 		SLSI_DBG4_NODEV(SLSI_SMAPPER, "Not enough memory\n");
 		return -ENOMEM;
 	}
+
+	slsi_skb_cb_init(skb);
 	SLSI_DBG4_NODEV(SLSI_SMAPPER, "SKB allocated: 0x%p at bank %d entry %d\n", skb, bank->bank, idx);
 	bank->skbuff_dma[idx] = dma_map_single(sdev->dev, skb->data,
 					     bank->entry_size, DMA_FROM_DEVICE);
 	err = dma_mapping_error(sdev->dev, bank->skbuff_dma[idx]);
 	if (err) {
 		SLSI_DBG4_NODEV(SLSI_SMAPPER, "Error mapping SKB: 0x%p at bank %d entry %d\n", skb, bank->bank, idx);
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		return err;
 	}
 
@@ -89,7 +91,7 @@ static int hip4_smapper_allocate_skb_buffer_entry(struct slsi_dev *sdev, struct 
 		SLSI_DBG4_NODEV(SLSI_SMAPPER, "Phys address: 0x%x not %d aligned. Unmap memory and return error\n",
 				bank->skbuff_dma[idx], bank->align);
 		dma_unmap_single(sdev->dev, bank->skbuff_dma[idx], bank->entry_size, DMA_FROM_DEVICE);
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		bank->skbuff_dma[idx] = 0;
 		return -ENOMEM;
 	}
@@ -133,7 +135,7 @@ static int hip4_smapper_free_skb_buffers(struct slsi_dev *sdev, struct hip4_smap
 			SLSI_DBG4_NODEV(SLSI_SMAPPER, "SKB free: 0x%p at bank %d entry %d\n", bank->skbuff[i], bank->bank, i);
 			dma_unmap_single(sdev->dev, bank->skbuff_dma[i], bank->entry_size, DMA_FROM_DEVICE);
 			bank->skbuff_dma[i] = 0;
-			slsi_kfree_skb(bank->skbuff[i]);
+			kfree_skb(bank->skbuff[i]);
 			bank->skbuff[i] = NULL;
 		}
 	}
@@ -333,9 +335,24 @@ struct sk_buff *hip4_smapper_get_skb(struct slsi_dev *sdev, struct slsi_hip4 *hi
 
 	SLSI_DBG4_NODEV(SLSI_SMAPPER, "Get SKB smapper: 0x%p, SKB fapi 0x%p\n", skb, skb_fapi);
 	cb->free_ma_unitdat = true;
-	slsi_kfree_skb(skb_fapi);
+	kfree_skb(skb_fapi);
 
 	return skb;
+}
+
+void hip4_smapper_free_mapped_skb(struct sk_buff *skb)
+{
+	struct slsi_skb_cb *cb;
+
+	if (!skb)
+		return;
+
+	cb = (struct slsi_skb_cb *)skb->cb;
+
+	if (cb && !cb->free_ma_unitdat && cb->skb_addr) {
+		kfree_skb(cb->skb_addr);
+		cb->skb_addr = NULL;
+	}
 }
 
 int hip4_smapper_init(struct slsi_dev *sdev, struct slsi_hip4 *hip)

@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * Copyright (c) 2012 - 2019 Samsung Electronics Co., Ltd. All rights reserved
+ * Copyright (c) 2012 - 2020 Samsung Electronics Co., Ltd. All rights reserved
  *
  ****************************************************************************/
 
@@ -389,6 +389,7 @@ void slsi_mlme_nan_store_config(struct netdev_vif *ndev_vif, struct slsi_hal_nan
 	ndev_vif->nan.config.scan_params_val.scan_period[1] = hal_req->scan_params_val.scan_period[1];
 	ndev_vif->nan.config.config_5g_dw_band = (u16)hal_req->config_5g_dw_band;
 	ndev_vif->nan.config.dw_5g_interval_val = hal_req->dw_5g_interval_val;
+	ndev_vif->nan.state = 1;
 }
 
 int slsi_mlme_nan_enable(struct slsi_dev *sdev, struct net_device *dev, struct slsi_hal_nan_enable_req *hal_req)
@@ -409,11 +410,12 @@ int slsi_mlme_nan_enable(struct slsi_dev *sdev, struct net_device *dev, struct s
 	}
 
 	fapi_set_u16(req, u.mlme_nan_start_req.nan_operation_control_flags, nan_oper_ctrl);
+	fapi_set_u32(req, u.mlme_nan_start_req.spare_1, hal_req->transaction_id);
 
 	r = slsi_mlme_nan_enable_fapi_data(ndev_vif, req, hal_req, !ndev_vif->nan.disable_cluster_merge);
 	if (r) {
 		SLSI_NET_ERR(dev, "Failed to construct mbulkdata\n");
-		slsi_kfree_skb(req);
+		kfree_skb(req);
 		return -EINVAL;
 	}
 
@@ -428,7 +430,7 @@ int slsi_mlme_nan_enable(struct slsi_dev *sdev, struct net_device *dev, struct s
 	}
 	if (!r)
 		slsi_mlme_nan_store_config(ndev_vif, hal_req);
-	slsi_kfree_skb(cfm);
+	kfree_skb(cfm);
 	return r;
 }
 
@@ -549,12 +551,15 @@ int slsi_mlme_nan_publish(struct slsi_dev *sdev, struct net_device *dev, struct 
 	fapi_set_u16(req, u.mlme_nan_publish_req.nan_sdf_flags, 0);
 
 	if (hal_req) {
+		fapi_set_u32(req, u.mlme_nan_publish_req.spare_1, hal_req->transaction_id);
 		r = slsi_mlme_nan_publish_fapi_data(req, hal_req);
 		if (r) {
 			SLSI_NET_ERR(dev, "Failed to construct mbulkdata\n");
-			slsi_kfree_skb(req);
+			kfree_skb(req);
 			return -EINVAL;
 		}
+	} else {
+		fapi_set_u32(req, u.mlme_nan_publish_req.spare_1, 0);
 	}
 
 	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_NAN_PUBLISH_CFM);
@@ -571,7 +576,7 @@ int slsi_mlme_nan_publish(struct slsi_dev *sdev, struct net_device *dev, struct 
 		ndev_vif->nan.service_id_map |= (u32)BIT(publish_id);
 	else
 		ndev_vif->nan.service_id_map &= (u32)~BIT(publish_id);
-	slsi_kfree_skb(cfm);
+	kfree_skb(cfm);
 	return r;
 }
 
@@ -706,14 +711,16 @@ int slsi_mlme_nan_subscribe(struct slsi_dev *sdev, struct net_device *dev, struc
 
 	fapi_set_u16(req, u.mlme_nan_subscribe_req.session_id, subscribe_id);
 	fapi_set_u16(req, u.mlme_nan_subscribe_req.nan_sdf_flags, 0);
-
 	if (hal_req) {
+		fapi_set_u32(req, u.mlme_nan_subscribe_req.spare_1, hal_req->transaction_id);
 		r = slsi_mlme_nan_subscribe_fapi_data(req, hal_req);
 		if (r) {
 			SLSI_NET_ERR(dev, "Failed to construct mbulkdata\n");
-			slsi_kfree_skb(req);
+			kfree_skb(req);
 			return -EINVAL;
 		}
+	} else {
+		fapi_set_u32(req, u.mlme_nan_subscribe_req.spare_1, 0);
 	}
 
 	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_NAN_SUBSCRIBE_CFM);
@@ -730,7 +737,7 @@ int slsi_mlme_nan_subscribe(struct slsi_dev *sdev, struct net_device *dev, struc
 		ndev_vif->nan.service_id_map |= (u32)BIT(subscribe_id);
 	else
 		ndev_vif->nan.service_id_map &= (u32)~BIT(subscribe_id);
-	slsi_kfree_skb(cfm);
+	kfree_skb(cfm);
 	return r;
 }
 
@@ -782,11 +789,12 @@ int slsi_mlme_nan_tx_followup(struct slsi_dev *sdev, struct net_device *dev,
 	fapi_set_u16(req, u.mlme_nan_followup_req.session_id, hal_req->publish_subscribe_id);
 	fapi_set_u16(req, u.mlme_nan_followup_req.match_id, hal_req->requestor_instance_id);
 	fapi_set_u16(req, u.mlme_nan_followup_req.nan_sdf_flags, nan_sdf_flags);
+	fapi_set_u32(req, u.mlme_nan_followup_req.spare_1, hal_req->transaction_id);
 
 	r = slsi_mlme_nan_followup_fapi_data(req, hal_req);
 	if (r) {
 		SLSI_NET_ERR(dev, "Failed to construct mbulkdata\n");
-		slsi_kfree_skb(req);
+		kfree_skb(req);
 		return -EINVAL;
 	}
 
@@ -807,7 +815,7 @@ int slsi_mlme_nan_tx_followup(struct slsi_dev *sdev, struct net_device *dev,
 			r = -EINVAL;
 	}
 
-	slsi_kfree_skb(cfm);
+	kfree_skb(cfm);
 	return r;
 }
 
@@ -880,11 +888,12 @@ int slsi_mlme_nan_set_config(struct slsi_dev *sdev, struct net_device *dev, stru
 	}
 
 	fapi_set_u16(req, u.mlme_nan_config_req.nan_operation_control_flags, nan_oper_ctrl);
+	fapi_set_u32(req, u.mlme_nan_config_req.spare_1, hal_req->transaction_id);
 
 	r = slsi_mlme_nan_config_fapi_data(ndev_vif, req, hal_req, !ndev_vif->nan.disable_cluster_merge);
 	if (r) {
 		SLSI_NET_ERR(dev, "Failed to construct mbulkdata\n");
-		slsi_kfree_skb(req);
+		kfree_skb(req);
 		return -EINVAL;
 	}
 
@@ -898,7 +907,7 @@ int slsi_mlme_nan_set_config(struct slsi_dev *sdev, struct net_device *dev, stru
 		r = -EINVAL;
 	}
 
-	slsi_kfree_skb(cfm);
+	kfree_skb(cfm);
 	return r;
 }
 
@@ -951,6 +960,7 @@ int slsi_mlme_ndp_request(struct slsi_dev *sdev, struct net_device *dev,
 	bool              include_ipv6_link_tlv, include_service_info_tlv = 0;
 	u8                *local_ndi;
 	struct net_device *data_dev;
+	struct netdev_vif *ndev_data_vif;
 
 	SLSI_NET_DBG3(dev, SLSI_MLME, "\n");
 
@@ -960,6 +970,7 @@ int slsi_mlme_ndp_request(struct slsi_dev *sdev, struct net_device *dev,
 		return -EINVAL;
 	}
 	local_ndi = data_dev->dev_addr;
+	ndev_data_vif = netdev_priv(data_dev);
 
 	include_ipv6_link_tlv = slsi_dev_nan_is_ipv6_link_tlv_include();
 
@@ -984,11 +995,12 @@ int slsi_mlme_ndp_request(struct slsi_dev *sdev, struct net_device *dev,
 	fapi_set_u16(req, u.mlme_ndp_request_req.match_id, hal_req->requestor_instance_id);
 	fapi_set_memcpy(req, u.mlme_ndp_request_req.local_ndp_interface_address, local_ndi);
 	fapi_set_memcpy(req, u.mlme_ndp_request_req.peer_nmi, hal_req->peer_disc_mac_addr);
+	fapi_set_u32(req, u.mlme_ndp_request_req.spare_1, hal_req->transaction_id);
 
 	r = slsi_mlme_ndp_request_fapi_data(req, hal_req, include_ipv6_link_tlv, include_service_info_tlv, local_ndi);
 	if (r) {
 		SLSI_NET_ERR(dev, "Failed to construct mbulkdata\n");
-		slsi_kfree_skb(req);
+		kfree_skb(req);
 		return -EINVAL;
 	}
 
@@ -1001,11 +1013,14 @@ int slsi_mlme_ndp_request(struct slsi_dev *sdev, struct net_device *dev,
 			     fapi_get_u16(cfm, u.mlme_ndp_request_cfm.result_code));
 		r = -EINVAL;
 	} else {
+		SLSI_MUTEX_LOCK(ndev_data_vif->vif_mutex);
+		ndev_data_vif->nan.ndp_count++;
+		SLSI_MUTEX_UNLOCK(ndev_data_vif->vif_mutex);
 		if (slsi_nan_ndp_new_entry(sdev, dev, ndp_id, ndl_vif_id, local_ndi, hal_req->peer_disc_mac_addr))
 			SLSI_NET_ERR(dev, "invalid ndl_vifid:%d ndp_id:%d\n", ndl_vif_id, ndp_id);
 	}
 
-	slsi_kfree_skb(cfm);
+	kfree_skb(cfm);
 	return r;
 }
 
@@ -1094,13 +1109,15 @@ int slsi_mlme_ndp_response(struct slsi_dev *sdev, struct net_device *dev,
 	fapi_set_u16(req, u.mlme_ndp_response_req.ndl_vif_index, ndl_vif_id);
 	fapi_set_u16(req, u.mlme_ndp_response_req.request_id, local_ndp_id);
 	fapi_set_memcpy(req, u.mlme_ndp_response_req.local_ndp_interface_address, local_ndi);
+	fapi_set_u32(req, u.mlme_ndp_response_req.spare_1, hal_req->transaction_id);
+
 	rsp_code = hal_req->rsp_code == NAN_DP_REQUEST_ACCEPT ? FAPI_REASONCODE_NDP_ACCEPTED :
 		   FAPI_REASONCODE_NDP_REJECTED;
 	fapi_set_u16(req, u.mlme_ndp_response_req.reason_code, rsp_code);
 	r = slsi_mlme_ndp_response_fapi_data(req, hal_req, include_ipv6_link_tlv, include_service_info_tlv, local_ndi);
 	if (r) {
 		SLSI_NET_ERR(dev, "Failed to construct mbulkdata\n");
-		slsi_kfree_skb(req);
+		kfree_skb(req);
 		return -EINVAL;
 	}
 
@@ -1112,18 +1129,30 @@ int slsi_mlme_ndp_response(struct slsi_dev *sdev, struct net_device *dev,
 		SLSI_NET_ERR(dev, "MLME_NDP_RESPONSE_CFM(res:0x%04x)\n",
 			     fapi_get_u16(cfm, u.mlme_ndp_request_cfm.result_code));
 		r = -EINVAL;
+		slsi_nan_ndp_del_entry(sdev, dev, hal_req->ndp_instance_id, false);
 	} else {
+		if (rsp_code == FAPI_REASONCODE_NDP_REJECTED)
+			slsi_nan_ndp_del_entry(sdev, dev, hal_req->ndp_instance_id, false);
 		/* new ndp entry was made when received mlme-ndp-requested.ind
 		 * but local_ndi is decided now.
 		 */
-		ether_addr_copy(ndev_vif->nan.ndp_ndi[hal_req->ndp_instance_id - 1], local_ndi);
+		if (hal_req->ndp_instance_id && rsp_code == FAPI_REASONCODE_NDP_ACCEPTED)
+			ether_addr_copy(ndev_vif->nan.ndp_ndi[hal_req->ndp_instance_id - 1], local_ndi);
+			if (data_dev) {
+				struct netdev_vif *ndev_data_vif = netdev_priv(data_dev);
+
+				ndev_data_vif = netdev_priv(data_dev);
+				SLSI_MUTEX_LOCK(ndev_data_vif->vif_mutex);
+				ndev_data_vif->nan.ndp_count++;
+				SLSI_MUTEX_UNLOCK(ndev_data_vif->vif_mutex);
+			}
 	}
 
-	slsi_kfree_skb(cfm);
+	kfree_skb(cfm);
 	return r;
 }
 
-int slsi_mlme_ndp_terminate(struct slsi_dev *sdev, struct net_device *dev, u16 ndp_id)
+int slsi_mlme_ndp_terminate(struct slsi_dev *sdev, struct net_device *dev, u16 ndp_id, u16 transaction_id)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct sk_buff    *req;
@@ -1144,7 +1173,7 @@ int slsi_mlme_ndp_terminate(struct slsi_dev *sdev, struct net_device *dev, u16 n
 	ndl_vif_id = ndev_vif->nan.ndp_id2ndl_vif[ndp_id - 1];
 	fapi_set_u16(req, u.mlme_ndp_terminate_req.ndl_vif_index, ndl_vif_id);
 	fapi_set_memcpy(req, u.mlme_ndp_terminate_req.local_ndp_interface_address, ndev_vif->nan.ndp_ndi[ndp_id - 1]);
-
+	fapi_set_u32(req, u.mlme_ndp_terminate_req.spare_1, transaction_id);
 	cfm = slsi_mlme_req_cfm(sdev, dev, req, MLME_NDP_TERMINATE_CFM);
 	if (!cfm) {
 		slsi_nan_ndp_termination_handler(sdev, dev, ndp_id, ndl_vif_id, ndev_vif->nan.ndp_ndi[ndp_id - 1]);
@@ -1157,6 +1186,6 @@ int slsi_mlme_ndp_terminate(struct slsi_dev *sdev, struct net_device *dev, u16 n
 		slsi_nan_ndp_termination_handler(sdev, dev, ndp_id, ndl_vif_id, ndev_vif->nan.ndp_ndi[ndp_id - 1]);
 	}
 
-	slsi_kfree_skb(cfm);
+	kfree_skb(cfm);
 	return 0;
 }

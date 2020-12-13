@@ -24,10 +24,8 @@
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
 #include <linux/netdevice.h>
 #endif
-#ifndef SLSI_TEST_DEV
-#ifdef CONFIG_ANDROID
+#ifdef CONFIG_SCSC_WLAN_ANDROID
 #include <linux/wakelock.h>
-#endif
 #endif
 #include "mbulk.h"
 #ifdef CONFIG_SCSC_SMAPPER
@@ -245,9 +243,9 @@ struct hip4_priv {
 	struct work_struct           intr_wq_ctrl;
 	struct work_struct           intr_wq_fb;
 	struct napi_struct           napi;
-#endif
+#else
 	struct work_struct           intr_wq;
-
+#endif
 	/* Interrupts cache < v4 */
 	/* TOHOST */
 	u32                          intr_tohost;
@@ -283,7 +281,7 @@ struct hip4_priv {
 	DECLARE_BITMAP(irq_bitmap, MIF_HIP_CFG_Q_NUM);
 #endif
 
-#if !defined SLSI_TEST_DEV && defined CONFIG_ANDROID
+#ifdef CONFIG_SCSC_WLAN_ANDROID
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
 	struct wake_lock             hip4_wake_lock_tx;
 	struct wake_lock             hip4_wake_lock_ctrl;
@@ -368,8 +366,7 @@ void hip4_resume(struct slsi_hip4 *hip);
 void hip4_freeze(struct slsi_hip4 *hip);
 void hip4_deinit(struct slsi_hip4 *hip);
 int hip4_free_ctrl_slots_count(struct slsi_hip4 *hip);
-
-int scsc_wifi_transmit_frame(struct slsi_hip4 *hip, bool ctrl_packet, struct sk_buff *skb);
+int scsc_wifi_transmit_frame(struct slsi_hip4 *hip, struct sk_buff *skb, bool ctrl_packet, u8 vif_index, u8 peer_index, u8 priority);
 
 /* Macros for accessing information stored in the hip_config struct */
 #define scsc_wifi_get_hip_config_version_4_u8(buff_ptr, member) le16_to_cpu((((struct hip4_hip_config_version_4 *)(buff_ptr))->member))

@@ -46,9 +46,10 @@ obj-$(CONFIG_MST_LDO)	  += mstdrv/
 subdir-$(CONFIG_PROCA)			+= proca
 obj-$(CONFIG_PROCA)			+= proca/
 
-# Kbuild should always enter proca/gaf because gaf should be always built
-subdir-y += proca/gaf
-obj-y    += proca/gaf/
+# GAF module for PROCA, Secure Storage 1
+subdir-$(CONFIG_GAF) += proca/gaf
+obj-$(CONFIG_GAF)    += proca/gaf/
+
 # Knox SDP
 obj-$(CONFIG_SDP) += sdp/
 obj-$(CONFIG_SDP) += sdp/built-in.o

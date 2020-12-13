@@ -21,6 +21,9 @@ struct slsi_dev;
 #define SLSI_VENDOR_OUI_AND_TYPE_LEN            4
 #define PMKID_LEN                               16
 #define RSN_SELECTOR_LEN                        4
+#ifdef CONFIG_SCSC_WLAN_MAC_ACL_PER_MAC
+#define SLSI_ACL_MAX_BSSID_COUNT                255
+#endif
 
 struct slsi_dev *slsi_cfg80211_new(struct device *dev);
 int slsi_cfg80211_register(struct slsi_dev *sdev);

@@ -100,12 +100,17 @@ run_list(dev, "subnode_4"); pre-configured lcd_pin pinctrl at subnode_1 will be 
 /* #define CONFIG_BOARD_DEBUG */
 
 #define BOARD_DTS_NAME	"decon_board"
+#if defined(CONFIG_EXYNOS_DPU20)
 #define PANEL_DTS_NAME	"lcd_info"
+#elif defined(CONFIG_EXYNOS_DPU30)
+#define PANEL_DTS_NAME	"panel-ddi-info"
+#endif
+#define PANEL_LUT_NAME	"panel-lut"
 
 #if defined(CONFIG_BOARD_DEBUG)
-#define dbg_dbg(fmt, ...)		pr_debug(pr_fmt("%s: %3d: %s: " fmt), BOARD_DTS_NAME, __LINE__, __func__, ##__VA_ARGS__)
+#define dbg_none(fmt, ...)		pr_debug(pr_fmt("%s: %3d: %s: " fmt), BOARD_DTS_NAME, __LINE__, __func__, ##__VA_ARGS__)
 #else
-#define dbg_dbg(fmt, ...)
+#define dbg_none(fmt, ...)
 #endif
 #define dbg_info(fmt, ...)		pr_info(pr_fmt("%s: %3d: %s: " fmt), BOARD_DTS_NAME, __LINE__, __func__, ##__VA_ARGS__)
 #define dbg_warn(fmt, ...)		pr_warn(pr_fmt("%s: %3d: %s: " fmt), BOARD_DTS_NAME, __LINE__, __func__, ##__VA_ARGS__)
@@ -114,7 +119,7 @@ run_list(dev, "subnode_4"); pre-configured lcd_pin pinctrl at subnode_1 will be 
 #define STRNEQ(a, b)			(strncmp((a), (b), (strlen(a))) == 0)
 
 #define MSEC_TO_USEC(ms)		(ms * USEC_PER_MSEC)
-#define USEC_TO_MSEC(us)		(us / USEC_PER_MSEC)
+#define USEC_TO_MSEC(us)		(do_div(us, USEC_PER_MSEC))
 #define SMALL_MSECS			(20)
 
 struct dt_node_info {
@@ -138,7 +143,7 @@ struct action_info {
 
 	unsigned int			idx;
 	int				gpio;
-	unsigned int			delay[2];
+	unsigned int			param[2];
 	struct regulator_bulk_data	*supply;
 	struct pinctrl			*pins;
 	struct pinctrl_state		*state;
@@ -152,6 +157,7 @@ enum {
 	ACTION_GPIO_LOW,
 	ACTION_REGULATOR_ENABLE,
 	ACTION_REGULATOR_DISABLE,
+	ACTION_REGULATOR_SET_VOLTAGE,
 	ACTION_DELAY_MDELAY,
 	ACTION_DELAY_MSLEEP,
 	ACTION_DELAY_USLEEP,	/* usleep_range */
@@ -167,6 +173,7 @@ const char *action_list[ACTION_MAX] = {
 	"gpio,low",
 	"regulator,enable",
 	"regulator,disable",
+	"regulator,set_voltage",
 	"delay,mdelay",
 	"delay,msleep",
 	"delay,usleep",
@@ -178,44 +185,69 @@ const char *action_list[ACTION_MAX] = {
 
 static struct dt_node_info	*dt_nodes[10];
 
+#if defined(CONFIG_EXYNOS_DPU20)
+static inline int get_boot_lcdtype(void)
+{
+	return (int)lcdtype;
+}
+
+static inline unsigned int get_boot_lcdconnected(void)
+{
+	return get_boot_lcdtype() ? 1 : 0;
+}
+#elif defined(CONFIG_EXYNOS_DPU30)
+static inline int get_boot_lcdtype(void)
+{
+	return boot_panel_id;
+}
+
+static inline unsigned int get_boot_lcdconnected(void)
+{
+	return (get_boot_lcdtype() >= 0) ? 1 : 0;
+}
+#endif
+
 static int print_action(struct action_info *action)
 {
 	if (!IS_ERR_OR_NULL(action->desc))
-		dbg_dbg("[%2d] %s\n", action->idx, action->desc);
+		dbg_none("[%2d] %s\n", action->idx, action->desc);
 
 	switch (action->idx) {
 	case ACTION_GPIO_HIGH:
-		dbg_dbg("[%2d] gpio(%d) high\n", action->idx, action->gpio);
+		dbg_none("[%2d] gpio(%d) high\n", action->idx, action->gpio);
 		break;
 	case ACTION_GPIO_LOW:
-		dbg_dbg("[%2d] gpio(%d) low\n", action->idx, action->gpio);
+		dbg_none("[%2d] gpio(%d) low\n", action->idx, action->gpio);
 		break;
 	case ACTION_REGULATOR_ENABLE:
-		dbg_dbg("[%2d] regulator(%s) enable\n", action->idx, action->supply->supply);
+		dbg_none("[%2d] regulator(%s) enable\n", action->idx, action->supply->supply);
 		break;
 	case ACTION_REGULATOR_DISABLE:
-		dbg_dbg("[%2d] regulator(%s) disable\n", action->idx, action->supply->supply);
+		dbg_none("[%2d] regulator(%s) disable\n", action->idx, action->supply->supply);
+		break;
+	case ACTION_REGULATOR_SET_VOLTAGE:
+		dbg_none("[%2d] regulator(%s) set_voltage\n", action->idx, action->supply->supply);
 		break;
 	case ACTION_DELAY_MDELAY:
-		dbg_dbg("[%2d] mdelay(%d)\n", action->idx, action->delay[0]);
+		dbg_none("[%2d] mdelay(%d)\n", action->idx, action->param[0]);
 		break;
 	case ACTION_DELAY_MSLEEP:
-		dbg_dbg("[%2d] msleep(%d)\n", action->idx, action->delay[0]);
+		dbg_none("[%2d] msleep(%d)\n", action->idx, action->param[0]);
 		break;
 	case ACTION_DELAY_USLEEP:
-		dbg_dbg("[%2d] usleep(%d %d)\n", action->idx, action->delay[0], action->delay[1]);
+		dbg_none("[%2d] usleep(%d %d)\n", action->idx, action->param[0], action->param[1]);
 		break;
 	case ACTION_PINCTRL:
-		dbg_dbg("[%2d] pinctrl(%s)\n", action->idx, action->state->name);
+		dbg_none("[%2d] pinctrl(%s)\n", action->idx, action->state->name);
 		break;
 	case ACTION_TIMER_START:
-		dbg_dbg("[%2d] timer,start(%s %d)\n", action->idx, action->timer->name, action->timer->delay);
+		dbg_none("[%2d] timer,start(%s %d)\n", action->idx, action->timer->name, action->timer->delay);
 		break;
 	case ACTION_TIMER_DELAY:
-		dbg_dbg("[%2d] timer,delay(%s %d)\n", action->idx, action->timer->name, action->timer->delay);
+		dbg_none("[%2d] timer,delay(%s %d)\n", action->idx, action->timer->name, action->timer->delay);
 		break;
 	case ACTION_TIMER_CLEAR:
-		dbg_dbg("[%2d] timer,clear(%s %d)\n", action->idx, action->timer->name, action->timer->delay);
+		dbg_none("[%2d] timer,clear(%s %d)\n", action->idx, action->timer->name, action->timer->delay);
 		break;
 	default:
 		dbg_info("[%2d] unknown idx\n", action->idx);
@@ -269,6 +301,7 @@ static void dump_list(struct list_head *lh)
 			break;
 		case ACTION_REGULATOR_ENABLE:
 		case ACTION_REGULATOR_DISABLE:
+		case ACTION_REGULATOR_SET_VOLTAGE:
 			regulator++;
 			break;
 		case ACTION_DELAY_MDELAY:
@@ -298,15 +331,15 @@ static struct timer_info *find_timer(const char *name)
 	struct action_info *action;
 	int idx = 0;
 
-	dbg_dbg("%s\n", name);
+	dbg_none("%s\n", name);
 	while (!IS_ERR_OR_NULL(dt_nodes[idx])) {
 		dt_node = dt_nodes[idx];
 		lh = &dt_node->node;
-		dbg_dbg("%dth dt_node name is %s\n", idx, dt_node->name);
+		dbg_none("%dth dt_node name is %s\n", idx, dt_node->name);
 		list_for_each_entry(action, lh, node) {
 			if (STRNEQ("timer", action->type)) {
 				if (action->timer && action->timer->name && STREQ(action->timer->name, name)) {
-					dbg_dbg("%s is found in %s\n", action->timer->name, dt_node->name);
+					dbg_none("%s is found in %s\n", action->timer->name, dt_node->name);
 					return action->timer;
 				}
 			}
@@ -362,6 +395,7 @@ static int decide_subinfo(struct device_node *np, struct action_info *action)
 	struct platform_device *pdev = NULL;
 	char *timer_name = NULL;
 	unsigned int delay = 0;
+	void *rdev_reg_data;
 
 	if (!action) {
 		dbg_warn("invalid action\n");
@@ -393,6 +427,47 @@ static int decide_subinfo(struct device_node *np, struct action_info *action)
 		ret = regulator_bulk_get(NULL, 1, action->supply);
 		if (ret < 0)
 			dbg_warn("regulator_bulk_get fail %d %s\n", ret, subinfo);
+
+		rdev_reg_data = regulator_get_drvdata(action->supply->consumer);
+		if (!rdev_reg_data)
+			dbg_warn("regulator_get_drvdata fail %s\n", subinfo);
+		break;
+	case ACTION_REGULATOR_SET_VOLTAGE:
+		action->supply = kzalloc(sizeof(struct regulator_bulk_data), GFP_KERNEL);
+		action->supply->supply = subinfo;
+		ret = regulator_bulk_get(NULL, 1, action->supply);
+		if (ret < 0)
+			dbg_warn("regulator_bulk_get fail %d %s\n", ret, subinfo);
+
+		rdev_reg_data = regulator_get_drvdata(action->supply->consumer);
+		if (!rdev_reg_data)
+			dbg_warn("regulator_get_drvdata fail %s\n", subinfo);
+
+		if (!isdigit(subinfo[0])) {
+			dbg_warn("set_voltage need digit parameter %s\n", subinfo);
+			ret = -EINVAL;
+			goto exit;
+		}
+
+		ret = sscanf(subinfo, "%8u %8u", &action->param[0], &action->param[1]);
+		if (ret < 0) {
+			dbg_warn("sscanf for param fail %d %s\n", ret, subinfo);
+			ret = -EINVAL;
+		} else if (ret < 2) {
+			action->param[1] = action->param[0];
+			dbg_none("set_voltage need two parameters. 2nd param is %d\n", action->param[1]);
+		} else if (ret > 2) {
+			dbg_warn("set_voltage need only two parameters\n");
+			ret = -EINVAL;
+		}
+
+		if (!action->param[0] || !action->param[1]) {
+			dbg_warn("set_voltage parameter (%d %d) invalid\n", action->param[0], action->param[1]);
+			ret = -EINVAL;
+		} else if (action->param[0] > action->param[1]) {
+			dbg_warn("set_voltage parameter (%d %d) invalid\n", action->param[0], action->param[1]);
+			ret = -EINVAL;
+		}
 		break;
 	case ACTION_DELAY_MDELAY:
 	case ACTION_DELAY_MSLEEP:
@@ -402,9 +477,9 @@ static int decide_subinfo(struct device_node *np, struct action_info *action)
 			goto exit;
 		}
 
-		ret = kstrtouint(subinfo, 0, &action->delay[0]);
+		ret = kstrtouint(subinfo, 0, &action->param[0]);
 		if (ret < 0)
-			dbg_warn("kstrtouint for delay fail %d %s\n", ret, subinfo);
+			dbg_warn("kstrtouint for param fail %d %s\n", ret, subinfo);
 		break;
 	case ACTION_DELAY_USLEEP:
 		if (!isdigit(subinfo[0])) {
@@ -413,27 +488,27 @@ static int decide_subinfo(struct device_node *np, struct action_info *action)
 			goto exit;
 		}
 
-		ret = sscanf(subinfo, "%8u %8u", &action->delay[0], &action->delay[1]);
+		ret = sscanf(subinfo, "%8u %8u", &action->param[0], &action->param[1]);
 		if (ret < 0) {
-			dbg_warn("sscanf for delay fail %d %s\n", ret, subinfo);
+			dbg_warn("sscanf for param fail %d %s\n", ret, subinfo);
 			ret = -EINVAL;
 		} else if (ret < 2) {
-			action->delay[1] = action->delay[0] + (action->delay[0] >> 1);
-			action->delay[1] = (action->delay[0] == action->delay[1]) ? action->delay[1] + 1 : action->delay[1];
-			dbg_warn("usleep need two parameters. 2nd delay is %d\n", action->delay[1]);
+			action->param[1] = action->param[0] + (action->param[0] >> 1);
+			action->param[1] = (action->param[0] == action->param[1]) ? action->param[1] + 1 : action->param[1];
+			dbg_none("usleep need two parameters. 2nd param is %d\n", action->param[1]);
 		} else if (ret > 2) {
 			dbg_warn("usleep need only two parameters\n");
 			ret = -EINVAL;
 		}
 
-		if (!action->delay[0] || !action->delay[1]) {
-			dbg_warn("usleep parameter (%d %d) invalid\n", action->delay[0], action->delay[1]);
+		if (!action->param[0] || !action->param[1]) {
+			dbg_warn("usleep parameter (%d %d) invalid\n", action->param[0], action->param[1]);
 			ret = -EINVAL;
-		} else if (action->delay[0] > action->delay[1]) {
-			dbg_warn("usleep parameter (%d %d) invalid\n", action->delay[0], action->delay[1]);
+		} else if (action->param[0] > action->param[1]) {
+			dbg_warn("usleep parameter (%d %d) invalid\n", action->param[0], action->param[1]);
 			ret = -EINVAL;
-		} else if (action->delay[0] >= MSEC_TO_USEC(SMALL_MSECS)) {
-			dbg_warn("use msleep instead of usleep for (%d)us\n", action->delay[0]);
+		} else if (action->param[0] >= MSEC_TO_USEC(SMALL_MSECS)) {
+			dbg_warn("use msleep instead of usleep for (%d)us\n", action->param[0]);
 			ret = -EINVAL;
 		}
 		break;
@@ -507,16 +582,11 @@ static struct device_node *of_find_lcd_info(struct device *dev)
 	struct device_node *parent = NULL;
 	struct device_node *np = NULL;
 
-	parent = (dev && dev->of_node) ? dev->of_node : NULL;
-	parent = of_find_node_with_property(np, PANEL_DTS_NAME);
-	if (parent)
-		dbg_dbg("%s property is in %s\n", PANEL_DTS_NAME, of_node_full_name(parent));
+	parent = (dev && dev->of_node) ? dev->of_node : of_find_node_with_property(NULL, PANEL_DTS_NAME);
 
 	np = of_parse_phandle(parent, PANEL_DTS_NAME, 0);
-	if (np)
-		dbg_info("%s property in %s has %s\n", PANEL_DTS_NAME, of_node_full_name(parent), of_node_full_name(np));
-	else
-		dbg_warn("%s of_parse_phandle skip\n", PANEL_DTS_NAME);
+
+	dbg_none("%s property in %s has %s\n", PANEL_DTS_NAME, of_node_full_name(parent), of_node_full_name(np));
 
 	return np;
 }
@@ -529,7 +599,7 @@ struct device_node *of_find_recommend_lcd_info(struct device *dev)
 
 	np = of_find_lcd_info(dev);
 	if (of_node_is_recommend(np)) {
-		dbg_dbg("%s is recommended\n", of_node_full_name(np));
+		dbg_info("%s is recommended\n", of_node_full_name(np));
 		return np;
 	}
 
@@ -538,33 +608,35 @@ struct device_node *of_find_recommend_lcd_info(struct device *dev)
 		for (i = 0; i < count; i++) {
 			np = of_parse_phandle(parent, PANEL_DTS_NAME, i);
 			if (of_node_is_recommend(np)) {
-				dbg_dbg("%s is recommended\n", of_node_full_name(np));
+				dbg_info("%s is recommended\n", of_node_full_name(np));
 				return np;
 			}
 		}
 	}
 
-	np = of_find_lcd_info(dev);	/* if fail to find recommend, just return 1st lcd_info */
-	if (np)
-		return np;
+	np = of_find_lcd_info(NULL);	/* if there is no recommend, return 1st lcd_info */
 
-	return NULL;
+	dbg_info("%s is found\n", of_node_full_name(np));
+
+	return np;
 }
 
 struct device_node *of_find_decon_board(struct device *dev)
 {
 	struct device_node *parent = NULL;
 	struct device_node *np = NULL;
+	const void *prop = NULL;
 
 	parent = of_find_recommend_lcd_info(dev);
-	if (!parent)
+	if (parent)
+		prop = of_get_property(parent, BOARD_DTS_NAME, NULL);
+
+	if (!parent || !prop)
 		parent = of_find_node_with_property(NULL, BOARD_DTS_NAME);
 
 	np = of_parse_phandle(parent, BOARD_DTS_NAME, 0);
-	if (np)
-		dbg_info("%s property in %s has %s\n", BOARD_DTS_NAME, of_node_full_name(parent), of_node_full_name(np));
-	else
-		dbg_warn("%s of_parse_phandle skip\n", BOARD_DTS_NAME);
+
+	dbg_info("%s property in %s has %s\n", BOARD_DTS_NAME, of_node_full_name(parent), of_node_full_name(np));
 
 	return np;
 }
@@ -601,8 +673,8 @@ static int make_list(struct device *dev, struct list_head *lh, const char *name)
 		of_property_read_string_index(np, "type", i * 2, &type);
 		of_property_read_string_index(np, "type", i * 2 + 1, &subinfo);
 
-		if (!lcdtype && !STRNEQ("delay", type) && !STRNEQ("timer", type)) {
-			dbg_info("lcdtype is zero, so skip to add %s: %2d: %s\n", name, count, type);
+		if (!get_boot_lcdconnected() && !STRNEQ("delay", type) && !STRNEQ("timer", type)) {
+			dbg_info("lcdtype(%d) is invalid, so skip to add %s: %2d: %s\n", get_boot_lcdtype(), name, count, type);
 			continue;
 		}
 
@@ -662,14 +734,19 @@ static int do_list(struct list_head *lh)
 			if (ret < 0)
 				dbg_warn("regulator_disable fail %d, %s\n", ret, action->supply->supply);
 			break;
+		case ACTION_REGULATOR_SET_VOLTAGE:
+			ret = regulator_set_voltage(action->supply->consumer, action->param[0], action->param[1]);
+			if (ret < 0)
+				dbg_warn("regulator_set_voltage fail %d, %s\n", ret, action->supply->supply);
+			break;
 		case ACTION_DELAY_MDELAY:
-			mdelay(action->delay[0]);
+			mdelay(action->param[0]);
 			break;
 		case ACTION_DELAY_MSLEEP:
-			msleep(action->delay[0]);
+			msleep(action->param[0]);
 			break;
 		case ACTION_DELAY_USLEEP:
-			usleep_range(action->delay[0], action->delay[1]);
+			usleep_range(action->param[0], action->param[1]);
 			break;
 		case ACTION_PINCTRL:
 			pinctrl_select_state(action->pins, action->state);
@@ -690,10 +767,12 @@ static int do_list(struct list_head *lh)
 				if (!us_delta || us_delta > UINT_MAX)
 					break;
 
-				if (us_delta < MSEC_TO_USEC(SMALL_MSECS))
+				if (us_delta < MSEC_TO_USEC(SMALL_MSECS)) {
 					usleep_range(us_delta, us_delta + (us_delta >> 1));
-				else
-					msleep(USEC_TO_MSEC(us_delta));
+				} else {
+					USEC_TO_MSEC(us_delta);
+					msleep(us_delta);
+				}
 			}
 		case ACTION_TIMER_CLEAR:
 			action->timer->end = 0;
@@ -718,10 +797,10 @@ static inline struct list_head *find_list(const char *name)
 	struct dt_node_info *dt_node = NULL;
 	int idx = 0;
 
-	dbg_dbg("%s\n", name);
+	dbg_none("%s\n", name);
 	while (!IS_ERR_OR_NULL(dt_nodes[idx])) {
 		dt_node = dt_nodes[idx];
-		dbg_dbg("%dth list name is %s\n", idx, dt_node->name);
+		dbg_none("%dth list name is %s\n", idx, dt_node->name);
 		if (STREQ(dt_node->name, name))
 			return &dt_node->node;
 		idx++;
@@ -764,7 +843,7 @@ int of_gpio_get_active(const char *gpioname)
 		goto exit;
 	}
 
-	dbg_dbg("%s property find in node %s\n", gpioname, np->name);
+	dbg_none("%s property find in node %s\n", gpioname, np->name);
 
 	gpio = of_get_named_gpio_flags(np, gpioname, 0, &flags);
 	if (!gpio_is_valid(gpio)) {
@@ -794,7 +873,7 @@ int of_gpio_get_value(const char *gpioname)
 		goto exit;
 	}
 
-	dbg_dbg("%s property find in node %s\n", gpioname, np->name);
+	dbg_none("%s property find in node %s\n", gpioname, np->name);
 
 	gpio = of_get_named_gpio_flags(np, gpioname, 0, &flags);
 	if (!gpio_is_valid(gpio)) {
@@ -826,7 +905,7 @@ int of_gpio_set_value(const char *gpioname, int value)
 		goto exit;
 	}
 
-	dbg_dbg("%s property find in node %s\n", gpioname, np->name);
+	dbg_none("%s property find in node %s\n", gpioname, np->name);
 
 	gpio = of_get_named_gpio_flags(np, gpioname, 0, &flags);
 	if (!gpio_is_valid(gpio)) {
@@ -858,7 +937,7 @@ int of_get_gpio_with_name(const char *gpioname)
 		goto exit;
 	}
 
-	dbg_dbg("%s property find in node %s\n", gpioname, np->name);
+	dbg_none("%s property find in node %s\n", gpioname, np->name);
 
 	gpio = of_get_named_gpio_flags(np, gpioname, 0, &flags);
 	if (!gpio_is_valid(gpio)) {
@@ -1137,4 +1216,105 @@ int of_update_recommend(struct device_node *np)
 
 	return __of_update_recommend(np, 1);
 }
+
+static int __init find_panel_lut_ddi_index(void)
+{
+	struct device_node *parent = NULL;
+	int lut_count, ret = 0;
+	u32 *lut_table = NULL;
+	u32 lut_index, id, mask, index, ddi_index = 0;
+
+	parent = of_find_node_with_property(NULL, PANEL_LUT_NAME);
+	if (!parent) {
+		dbg_warn("%s property does not exist so skip\n", PANEL_DTS_NAME);
+		return -EINVAL;
+	}
+
+	lut_count = of_property_count_u32_elems(parent, PANEL_LUT_NAME);
+	if (lut_count < 0 || lut_count % 4 || lut_count >= U8_MAX) {
+		dbg_warn("%s property has invalid count(%d)\n", PANEL_LUT_NAME, lut_count);
+		return -EINVAL;
+	}
+
+	lut_table = kcalloc(lut_count, sizeof(u32), GFP_KERNEL);
+	if (!lut_count) {
+		dbg_warn("%s property kcalloc fail\n", PANEL_LUT_NAME);
+		return -EINVAL;
+	}
+
+	ret = of_property_read_u32_array(parent, PANEL_LUT_NAME, lut_table, lut_count);
+	if (ret < 0) {
+		dbg_warn("of_property_read_u32_array fail. ret(%d)\n", ret);
+		kfree(lut_table);
+		return -EINVAL;
+	}
+
+	for (lut_index = 0; lut_index < lut_count; lut_index += 4) {
+		id = lut_table[lut_index + 0];
+		mask = lut_table[lut_index + 1];
+		index = lut_table[lut_index + 2];
+		ddi_index = lut_table[lut_index + 3];
+
+		if ((id & mask) == (get_boot_lcdtype() & mask)) {
+			dbg_info("%dth id_match. lcdtype(%06X), id(%06X), mask(%06X), index(%d), ddi_index(%d)\n",
+				lut_index >> 2, get_boot_lcdtype(), id, mask, index, ddi_index);
+
+			break;
+		}
+	}
+
+	kfree(lut_table);
+
+	ret = (ddi_index >= U8_MAX) ? -EINVAL : ddi_index;
+
+	return ret;
+}
+
+static int __init panel_lut_ddi_recommend_init(void)
+{
+	struct device_node *parent = NULL;
+	struct device_node *np = NULL;
+	int ret = 0, ddi_count;
+	u32 ddi_index = 0;
+
+	parent = of_find_node_with_property(NULL, PANEL_LUT_NAME);
+	if (!parent) {
+		dbg_warn("%s property does not exist so skip\n", PANEL_DTS_NAME);
+		return 0;
+	}
+
+	ddi_index = find_panel_lut_ddi_index();
+	if (ret < 0)
+		return 0;
+
+	ddi_count = of_count_phandle_with_args(parent, PANEL_DTS_NAME, NULL);
+	if (ddi_count < 0 || ddi_count < ddi_index) {
+		dbg_warn("%s property has invalid count(%d)\n", PANEL_DTS_NAME, ddi_count);
+		return 0;
+	}
+
+	np = of_parse_phandle(parent, PANEL_DTS_NAME, ddi_index);
+	if (!np) {
+		dbg_info("of_parse_phandle fail\n");
+		return 0;
+	}
+
+	ret = of_update_recommend(np);
+	if (ret < 0) {
+		dbg_info("of_parse_phandle fail(%d)\n", ret);
+		return 0;
+	}
+
+	dbg_info("%s\n", of_node_full_name(np));
+
+	return 0;
+}
+
+static int __init decon_board_init(void)
+{
+	panel_lut_ddi_recommend_init();
+
+	return 0;
+}
+core_initcall(decon_board_init);
 

@@ -76,7 +76,10 @@ enum fimc_is_rom_type {
 struct fimc_is_rom_data {
 	u32 rom_type;
 	u32 rom_valid;
-	bool is_rom_read; 
+	bool is_rom_read;
+#ifdef USE_DIFFERENT_ISP_MODULE
+	bool use_different_isp_module;	/* Allow common module load, meant for different ISP also */
+#endif
 };
 
 enum fimc_is_rom_cal_index {
@@ -84,6 +87,12 @@ enum fimc_is_rom_cal_index {
 	ROM_CAL_SLAVE0	= 1,
 	ROM_CAL_SLAVE1	= 2,
 	ROM_CAL_MAX,
+};
+
+struct capture_intent_info_t {
+	u16 captureIntent;
+	u16 captureCount;
+	s16 captureEV;
 };
 
 #ifdef USE_CAMERA_HW_BIG_DATA

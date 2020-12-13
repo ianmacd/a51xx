@@ -75,9 +75,14 @@ int decon_notifier_call_chain(unsigned long val, void *v)
 
 	state = *(int *)evdata->data;
 
-	current_index = EVENT_TO_STAMP[val];
+	if (val >= EVENT_MAX || state >= STATE_MAX) {
+		dbg_info("invalid notifier info: %d, %02lx\n", state, val);
+		return NOTIFY_DONE;
+	}
 
-	WARN_ON(!current_index);
+	current_index = EVENT_TO_STAMP[val] ? EVENT_TO_STAMP[val] : DECON_STAMP_UNKNOWN;
+
+	WARN_ON(current_index == DECON_STAMP_UNKNOWN);
 
 	STAMP_TIME[current_index][CHAIN_START] = current_clock = local_clock();
 	STAMP_TIME[DECON_STAMP_BLANK][CHAIN_END] = (val == DECON_EVENT_DOZE) ? current_clock : STAMP_TIME[DECON_STAMP_BLANK][CHAIN_END];

@@ -98,8 +98,35 @@
 #define BSMHCP_INCREASE_INDEX(index, limit) \
 		((index) = ((index) + 1) % (limit))
 
+/*
+ * For a ring where read == write indicates empty this returns false
+ * if adding one more would cause it to see the ring as empty
+ *        read = 3 % 5 = 3
+ *        v
+ * [X,X,_,X,X]
+ *      ^
+ *      write = 7 % 5 = 2
+ */
 #define BSMHCP_HAS_ROOM(write, read, limit) \
 		((((write) + 1) % (limit)) != (read))
+
+/*
+ * Calculate the how many times you could increase the write pointer
+ * without causing them to be seen as empty
+ *        read = 3 % 5 = 3
+ *        v
+ * [X,_,_,X,X]
+ *    ^
+ *    write = 6 % 5 = 1
+ *
+ * BSMHCP_AMOUNT_FREE(6,3,5) == BSMHCP_AMOUNT_FREE(1,3,5) == 1
+ *  You can add one more element before BSMHCP_HAS_ROOM would return false
+ */
+#define BSMHCP_AMOUNT_FREE(write, read, limit) \
+		(((read) - (write + 1)) % (limit))
+
+#define BSMHCP_USED_ENTRIES(write, read, limit) \
+		((write) >= (read) ? (write - read) : (limit - read + write))
 
 struct BSMHCP_TD_CONTROL {
 	uint16_t length;
@@ -256,9 +283,13 @@ struct BSMHCP_HEADER {
 	uint32_t                        reserved12_u32;             /* 0xB8 */
 	uint16_t                        info_ap_to_bg_int_src;      /* 0xBC */
 	uint16_t                        info_bg_to_ap_int_src;      /* 0xBE */
-	uint32_t                        mxlog_filter;               /* 0xC0 */
+	uint32_t                        btlog_enables0_low;         /* 0xC0 */
 	uint32_t                        firmware_control;           /* 0xC4 */
-	uint8_t                         reserved6[0x24];            /* 0xC8 */
+	uint32_t                        reserved13_u32;             /* 0xC8 */
+	uint32_t                        btlog_enables0_high;        /* 0xCC */
+	uint32_t                        btlog_enables1_low;         /* 0xD0 */
+	uint32_t                        btlog_enables1_high;        /* 0xD4 */
+	uint8_t                         reserved6[0x14];            /* 0xD8 */
 
 	/* Obsolete region - not used */
 	uint32_t                        smm_debug_read;             /* 0xEC */

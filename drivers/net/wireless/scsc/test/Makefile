@@ -25,8 +25,8 @@ $(CONFIG_SCSC_WLAN_MODULE)-y += ../src_sink.o
 $(CONFIG_SCSC_WLAN_MODULE)-y += ../fw_test.o
 $(CONFIG_SCSC_WLAN_MODULE)-y += ../cac.o
 $(CONFIG_SCSC_WLAN_MODULE)-y += ../ioctl.o
-$(CONFIG_SCSC_WLAN_MODULE)-y += ../wakelock.o
 $(CONFIG_SCSC_WLAN_MODULE)-y += ../traffic_monitor.o
+$(CONFIG_SCSC_WLAN_MODULE)-y += ../reg_info.o
 # enable GSCAN
 ifeq ($(CONFIG_SCSC_WLAN_GSCAN_ENABLE),y)
 $(CONFIG_SCSC_WLAN_MODULE)-y += ../nl80211_vendor.o
@@ -79,7 +79,6 @@ ccflags-y += -Wno-sign-compare
 # wlan configuration
 # ----------------------------------------------------------------------------
 ccflags-$(CONFIG_SCSC_WLAN_DEBUG)				+= -DCONFIG_SCSC_WLAN_DEBUG
-ccflags-$(CONFIG_SCSC_WLAN_SKB_TRACKING)			+= -DCONFIG_SCSC_WLAN_SKB_TRACKING
 ccflags-$(CONFIG_SCSC_WLAN_OFFLINE_TRACE)			+= -DCONFIG_SCSC_WLAN_OFFLINE_TRACE
 ccflags-$(CONFIG_SCSC_WLAN_OFFLINE_SDIO_TRACE)			+= -DCONFIG_SCSC_WLAN_OFFLINE_SDIO_TRACE
 ccflags-$(CONFIG_SCSC_WLAN_OFFLINE_DATA_PLANE_PROFILE_TRACE)	+= -DCONFIG_SCSC_WLAN_OFFLINE_DATA_PLANE_PROFILE_TRACE

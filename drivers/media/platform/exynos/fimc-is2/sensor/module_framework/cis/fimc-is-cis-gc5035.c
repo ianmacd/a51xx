@@ -162,13 +162,13 @@ static void sensor_gc5035_data_calculation(const struct sensor_pll_info_compact 
 	cis_data->frame_valid_us_time = (int)frame_valid_us;
 
 	dbg_sensor(2, "%s\n", __func__);
-	dbg_sensor(2, "Sensor size(%d x %d) setting: SUCCESS!\n", cis_data->cur_width, cis_data->cur_height);
-	dbg_sensor(2, "Frame Valid(us): %d\n", frame_valid_us);
-	dbg_sensor(2, "rolling_shutter_skew: %lld\n", cis_data->rolling_shutter_skew);
+	dbg_sensor(2, "Sensor size(%d x %d) setting : SUCCESS!\n", cis_data->cur_width, cis_data->cur_height);
+	dbg_sensor(2, "Frame Valid(us) : %d\n", frame_valid_us);
+	dbg_sensor(2, "rolling_shutter_skew : %lld\n", cis_data->rolling_shutter_skew);
 
-	dbg_sensor(2, "Fps: %d, max fps(%d)\n", frame_rate, cis_data->max_fps);
+	dbg_sensor(2, "Fps : %d, max fps(%d)\n", frame_rate, cis_data->max_fps);
 	dbg_sensor(2, "min_frame_time(%d us)\n", cis_data->min_frame_us_time);
-	dbg_sensor(2, "Pixel rate(Mbps): %d\n", cis_data->pclk / 1000000);
+	dbg_sensor(2, "Pixel rate(Mbps) : %d\n", cis_data->pclk / 1000000);
 
 	/* Frame period calculation */
 	cis_data->frame_time = (cis_data->line_readOut_time * cis_data->cur_height / 1000);
@@ -234,7 +234,7 @@ int sensor_gc5035_check_rev(struct fimc_is_cis *cis)
 		goto p_err;
 	}
 
-	/* read chip id */	
+	/* read chip id */
 	ret = fimc_is_sensor_addr8_write8(client, 0xfe, 0x02);
 	if (ret < 0) {
 		err("sensor_gc5035_set_registers fail!!");
@@ -341,7 +341,7 @@ u32 sensor_gc5035_calc_dgain_code(u32 input_gain, u32 permile)
 	return digital_gain;
 }
 
-int sensor_gc5035_set_exposure_time(struct v4l2_subdev *subdev, u16 multiple_exp)
+int sensor_gc5035_set_exposure_time(struct v4l2_subdev *subdev, u16 target_exp)
 {
 	int ret = 0;
 	int hold = 0;
@@ -358,7 +358,7 @@ int sensor_gc5035_set_exposure_time(struct v4l2_subdev *subdev, u16 multiple_exp
 		ret = -EINVAL;
 		return ret;
 	}
-	dbg_sensor(2, "[%s] multiple_exp %d\n", __func__, multiple_exp);
+	dbg_sensor(2, "[%s] target_exp %d\n", __func__, target_exp);
 
 	I2C_MUTEX_LOCK(cis->i2c_lock);
 
@@ -374,10 +374,10 @@ int sensor_gc5035_set_exposure_time(struct v4l2_subdev *subdev, u16 multiple_exp
 		 goto p_err;
 
 	/* Short exposure */
-	ret = fimc_is_sensor_addr8_write8(client, 0x03, (multiple_exp >> 8) & 0x3f);
+	ret = fimc_is_sensor_addr8_write8(client, 0x03, (target_exp >> 8) & 0x3f);
 	if (ret < 0)
 		goto p_err;
-	ret = fimc_is_sensor_addr8_write8(client, 0x04, (multiple_exp & 0xfc));
+	ret = fimc_is_sensor_addr8_write8(client, 0x04, (target_exp & 0xfc));
 	if (ret < 0)
 		goto p_err;
 
@@ -427,6 +427,8 @@ int sensor_gc5035_set_analog_gain(struct v4l2_subdev *subdev, u32 input_again)
 
 	analog_gain = sensor_gc5035_calc_again_code(input_again);
 	analog_permile = sensor_gc5035_calc_again_permile(analog_gain);
+
+	/* Compensate for a loss of analog gain having large gaps between the values it limitedly has by using digital gain */
 	digital_gain = sensor_gc5035_calc_dgain_code(input_again, analog_permile);
 
 	if (analog_gain < cis->cis_data->min_analog_gain[0]) {
@@ -1300,7 +1302,7 @@ int sensor_gc5035_cis_get_min_exposure_time(struct v4l2_subdev *subdev, u32 *min
 	u32 min_integration_time = 0;
 	u32 min_coarse = 0;
 	u32 min_fine = 0;
-	u32 vt_pix_clk_freq_mhz = 0;
+	u64 vt_pix_clk_freq_khz = 0;
 	u32 line_length_pck = 0;
 
 #ifdef DEBUG_SENSOR_TIME
@@ -1318,16 +1320,16 @@ int sensor_gc5035_cis_get_min_exposure_time(struct v4l2_subdev *subdev, u32 *min
 
 	cis_data = cis->cis_data;
 
-	vt_pix_clk_freq_mhz = cis_data->pclk / (1000 * 1000);
-	if (vt_pix_clk_freq_mhz == 0) {
-		pr_err("[MOD:D:%d] %s, Invalid vt_pix_clk_freq_mhz(%d)\n", cis->id, __func__, vt_pix_clk_freq_mhz);
+	vt_pix_clk_freq_khz = cis_data->pclk / 1000;
+	if (vt_pix_clk_freq_khz == 0) {
+		pr_err("[MOD:D:%d] %s, Invalid vt_pix_clk_freq_khz(%llu)\n", cis->id, __func__, vt_pix_clk_freq_khz);
 		goto p_err;
 	}
 	line_length_pck = cis_data->line_length_pck;
 	min_coarse = cis_data->min_coarse_integration_time;
 	min_fine = cis_data->min_fine_integration_time;
 
-	min_integration_time = ((line_length_pck * min_coarse) + min_fine) / vt_pix_clk_freq_mhz;
+	min_integration_time = (u32)((u64)((line_length_pck * min_coarse) + min_fine) * 1000 / vt_pix_clk_freq_khz);
 	*min_expo = min_integration_time;
 
 	dbg_sensor(2, "[%s] min integration time %d\n", __func__, min_integration_time);
@@ -1351,7 +1353,7 @@ int sensor_gc5035_cis_get_max_exposure_time(struct v4l2_subdev *subdev, u32 *max
 	u32 max_fine_margin = 0;
 	u32 max_coarse = 0;
 	u32 max_fine = 0;
-	u32 vt_pix_clk_freq_mhz = 0;
+	u64 vt_pix_clk_freq_khz = 0;
 	u32 line_length_pck = 0;
 	u32 frame_length_lines = 0;
 
@@ -1370,9 +1372,9 @@ int sensor_gc5035_cis_get_max_exposure_time(struct v4l2_subdev *subdev, u32 *max
 
 	cis_data = cis->cis_data;
 
-	vt_pix_clk_freq_mhz = cis_data->pclk / (1000 * 1000);
-	if (vt_pix_clk_freq_mhz == 0) {
-		pr_err("[MOD:D:%d] %s, Invalid vt_pix_clk_freq_mhz(%d)\n", cis->id, __func__, vt_pix_clk_freq_mhz);
+	vt_pix_clk_freq_khz = cis_data->pclk / 1000;
+	if (vt_pix_clk_freq_khz == 0) {
+		pr_err("[MOD:D:%d] %s, Invalid vt_pix_clk_freq_khz(%llu)\n", cis->id, __func__, vt_pix_clk_freq_khz);
 		goto p_err;
 	}
 	line_length_pck = cis_data->line_length_pck;
@@ -1383,7 +1385,7 @@ int sensor_gc5035_cis_get_max_exposure_time(struct v4l2_subdev *subdev, u32 *max
 	max_coarse = frame_length_lines - max_coarse_margin;
 	max_fine = cis_data->max_fine_integration_time;
 
-	max_integration_time = ((line_length_pck * max_coarse) + max_fine) / vt_pix_clk_freq_mhz;
+	max_integration_time = (u32)((u64)((line_length_pck * max_coarse) + max_fine) * 1000 / vt_pix_clk_freq_khz);
 
 	*max_expo = max_integration_time;
 
@@ -1411,7 +1413,7 @@ int sensor_gc5035_cis_adjust_frame_duration(struct v4l2_subdev *subdev,
 	struct fimc_is_cis *cis;
 	cis_shared_data *cis_data;
 
-	u32 vt_pix_clk_freq_mhz = 0;
+	u64 vt_pix_clk_freq_khz = 0;
 	u32 line_length_pck = 0;
 	u32 frame_length_lines = 0;
 	u32 frame_duration = 0;
@@ -1432,14 +1434,14 @@ int sensor_gc5035_cis_adjust_frame_duration(struct v4l2_subdev *subdev,
 
 	cis_data = cis->cis_data;
 
-	vt_pix_clk_freq_mhz = cis_data->pclk / (1000 * 1000);
+	vt_pix_clk_freq_khz = cis_data->pclk / 1000;
 	line_length_pck = cis_data->line_length_pck;
-	frame_length_lines = ((vt_pix_clk_freq_mhz * input_exposure_time) / line_length_pck);
+	frame_length_lines = (u32)((vt_pix_clk_freq_khz * input_exposure_time) / (line_length_pck * 1000));
 	frame_length_lines += cis_data->max_margin_coarse_integration_time;
 
 	max_frame_us_time = 1000000/cis->min_fps;
 
-	frame_duration = (frame_length_lines * line_length_pck) / vt_pix_clk_freq_mhz;
+	frame_duration = (u32)((u64)(frame_length_lines * line_length_pck) * 1000 / vt_pix_clk_freq_khz);
 
 	dbg_sensor(2, "[%s](vsync cnt = %d) input exp(%d), adj duration - frame duraion(%d), min_frame_us(%d)\n",
 			__func__, cis_data->sen_vsync_count, input_exposure_time, frame_duration, cis_data->min_frame_us_time);
@@ -1449,7 +1451,7 @@ int sensor_gc5035_cis_adjust_frame_duration(struct v4l2_subdev *subdev,
 		*target_duration = MIN(frame_duration, max_frame_us_time);
 	}
 
-	dbg_sensor(2, "[%s] requested min_fps(%d), max_fps(%d) from HAL, calculated frame_duration(%d), adjusted frame_duration(%d)\n", 
+	dbg_sensor(2, "[%s] requested min_fps(%d), max_fps(%d) from HAL, calculated frame_duration(%d), adjusted frame_duration(%d)\n",
 		__func__, cis->min_fps, cis->max_fps, frame_duration, *target_duration);
 
 #ifdef DEBUG_SENSOR_TIME
@@ -1469,7 +1471,7 @@ int sensor_gc5035_cis_set_frame_duration(struct v4l2_subdev *subdev, u32 frame_d
 	cis_shared_data *cis_data;
 	struct fimc_is_core *core;
 
-	u32 vt_pix_clk_freq_mhz = 0;
+	u64 vt_pix_clk_freq_khz = 0;
 	u32 line_length_pck = 0;
 	u16 frame_length_lines = 0;
 
@@ -1511,10 +1513,10 @@ int sensor_gc5035_cis_set_frame_duration(struct v4l2_subdev *subdev, u32 frame_d
 		frame_duration = cis_data->min_frame_us_time;
 	}
 
-	vt_pix_clk_freq_mhz = cis_data->pclk / (1000 * 1000);
+	vt_pix_clk_freq_khz = cis_data->pclk / 1000;
 	line_length_pck = cis_data->line_length_pck;
 
-	frame_length_lines = (u16)((vt_pix_clk_freq_mhz * frame_duration) / line_length_pck);
+	frame_length_lines = (u16)((vt_pix_clk_freq_khz * frame_duration) / (line_length_pck * 1000));
 
 	/* Frame length lines should be a multiple of 4 */
 	frame_length_lines = MULTIPLE_OF_4(frame_length_lines);
@@ -1523,9 +1525,9 @@ int sensor_gc5035_cis_set_frame_duration(struct v4l2_subdev *subdev, u32 frame_d
 		frame_length_lines = 0x3ffc;
 	}
 
-	dbg_sensor(2, "[MOD:D:%d] %s, vt_pix_clk_freq_mhz(%#x) frame_duration = %d us,"
+	dbg_sensor(2, "[MOD:D:%d] %s, vt_pix_clk_freq_khz(%llu) frame_duration = %d us, "
 		KERN_CONT "line_length_pck(%#x), frame_length_lines(%#x)\n",
-		cis->id, __func__, vt_pix_clk_freq_mhz, frame_duration, line_length_pck, frame_length_lines);
+		cis->id, __func__, vt_pix_clk_freq_khz, frame_duration, line_length_pck, frame_length_lines);
 
 	I2C_MUTEX_LOCK(cis->i2c_lock);
 
@@ -2005,7 +2007,7 @@ p_err:
 	return ret;
 }
 
-int sensor_gc5035_cis_set_totalgain(struct v4l2_subdev *subdev, struct ae_param *target_exposure, 
+int sensor_gc5035_cis_set_totalgain(struct v4l2_subdev *subdev, struct ae_param *target_exposure,
 	struct ae_param *again, struct ae_param *dgain)
 {
 	int ret = 0;
@@ -2013,9 +2015,9 @@ int sensor_gc5035_cis_set_totalgain(struct v4l2_subdev *subdev, struct ae_param 
 	cis_shared_data *cis_data;
 	struct fimc_is_core *core;
 
-	u16 origin_exp = 0;
-	u16 multiple_exp = 0;
-	u32 vt_pix_clk_freq_mhz = 0;
+	u16 input_exp = 0;
+	u16 target_exp = 0;
+	u64 vt_pix_clk_freq_khz = 0;
 	u32 line_length_pck = 0;
 	u32 min_fine_int = 0;
 	u32 input_again = 0;
@@ -2054,52 +2056,53 @@ int sensor_gc5035_cis_set_totalgain(struct v4l2_subdev *subdev, struct ae_param 
 	dbg_sensor(2, "[MOD:D:%d] %s, vsync_cnt(%d), target long(%d), again(%d)\n", cis->id, __func__,
 			cis_data->sen_vsync_count, target_exposure->long_val, again->val);
 
-	vt_pix_clk_freq_mhz = cis_data->pclk / (1000 * 1000);
+	vt_pix_clk_freq_khz = cis_data->pclk / 1000;
 	line_length_pck = cis_data->line_length_pck;
 	min_fine_int = cis_data->min_fine_integration_time;
 
-	dbg_sensor(2, "[MOD:D:%d] %s, vt_pix_clk_freq_mhz (%d), line_length_pck(%d), min_fine_int (%d)\n",
-		cis->id, __func__, vt_pix_clk_freq_mhz, line_length_pck, min_fine_int);
+	dbg_sensor(2, "[MOD:D:%d] %s, vt_pix_clk_freq_khz (%llu), line_length_pck(%d), min_fine_int (%d)\n",
+		cis->id, __func__, vt_pix_clk_freq_khz, line_length_pck, min_fine_int);
 
-	origin_exp = ((target_exposure->long_val * vt_pix_clk_freq_mhz) - min_fine_int) / line_length_pck;
+	input_exp = (u16)(((target_exposure->long_val * vt_pix_clk_freq_khz) / 1000 - min_fine_int) / line_length_pck);
 
-	if (origin_exp > cis_data->max_coarse_integration_time) {
-		origin_exp = cis_data->max_coarse_integration_time;
-		dbg_sensor(2, "[MOD:D:%d] %s, vsync_cnt(%d), origin exp(%d) max\n", cis->id, __func__,
-			cis_data->sen_vsync_count, origin_exp);
+	if (input_exp > cis_data->max_coarse_integration_time) {
+		input_exp = cis_data->max_coarse_integration_time;
+		dbg_sensor(2, "[MOD:D:%d] %s, vsync_cnt(%d), input exp(%d) max\n", cis->id, __func__,
+			cis_data->sen_vsync_count, input_exp);
 	}
 
-	if (origin_exp < cis_data->min_coarse_integration_time) {
-		origin_exp = cis_data->min_coarse_integration_time;
-		dbg_sensor(2, "[MOD:D:%d] %s, vsync_cnt(%d), origin exp(%d) min\n", cis->id, __func__,
-			cis_data->sen_vsync_count, origin_exp);
+	if (input_exp < cis_data->min_coarse_integration_time) {
+		input_exp = cis_data->min_coarse_integration_time;
+		dbg_sensor(2, "[MOD:D:%d] %s, vsync_cnt(%d), input exp(%d) min\n", cis->id, __func__,
+			cis_data->sen_vsync_count, input_exp);
 	}
 
 	/* Exposure time should be a multiple of 4 */
-	multiple_exp = MULTIPLE_OF_4(origin_exp);
-	if (multiple_exp > 0x3ffc) {
-		warn("%s: long_coarse_int is above the maximum value : 0x%04x (should be lower than 0x3ffc)\n", __func__, multiple_exp);
-		multiple_exp = 0x3ffc;
+	target_exp = MULTIPLE_OF_4(input_exp);
+	if (target_exp > 0x3ffc) {
+		warn("%s: long_coarse_int is above the maximum value : 0x%04x (should be lower than 0x3ffc)\n", __func__, target_exp);
+		target_exp = 0x3ffc;
 	}
 
 	/* Set Exposure Time */
-	ret = sensor_gc5035_set_exposure_time(subdev, multiple_exp);
+	ret = sensor_gc5035_set_exposure_time(subdev, target_exp);
 	if (ret < 0) {
 		err("[%s] sensor_gc5035_set_exposure_time fail\n", __func__);
 		goto p_err;
 	}
 
 	/* Set Analog & Digital gains */
-	input_again = ((float)(origin_exp)/(float)(multiple_exp))*(again->val);
+	/* Following formular was changed (Original one is ((float)input_exp/(float)target_exp)*again->val) */
+	input_again = (input_exp * 100000 / target_exp) * again->val / 100000;
 	ret = sensor_gc5035_set_analog_gain(subdev, input_again);
 	if (ret < 0) {
 		err("[%s] sensor_gc5035_set_analog_gain fail\n", __func__);
 		goto p_err;
 	}
 
-	dbg_sensor(2, "[MOD:D:%d] %s, frame_length_lines:%d(%#x), multiple_exp:%d(%#x), input_again:%d(%#x)\n",
-		cis->id, __func__, cis_data->frame_length_lines, cis_data->frame_length_lines, 
-		multiple_exp, multiple_exp, input_again, input_again);
+	dbg_sensor(2, "[MOD:D:%d] %s, frame_length_lines:%d(%#x), target_exp:%d(%#x), input_again:%d(%#x)\n",
+		cis->id, __func__, cis_data->frame_length_lines, cis_data->frame_length_lines,
+		target_exp, target_exp, input_again, input_again);
 
 p_err:
 
@@ -2393,6 +2396,19 @@ int cis_gc5035_probe(struct i2c_client *client,
 			}
 		}
 	}
+#ifdef USE_DIFFERENT_ISP_MODULE
+	if (of_property_read_bool(dnode, "use_different_isp_module")) {
+		ret = of_property_read_u32(dnode, "rom_position", &rom_position);
+		if (ret) {
+			err("rom_position read is fail(%d)", ret);
+		} else {
+			specific = core->vender.private_data;
+			specific->rom_data[rom_position].use_different_isp_module = true;
+
+			probe_info("%s: GC5035 use_different_isp_module\n", __func__);
+		}
+	}
+#endif /* USE_DIFFERENT_ISP_MODULE */
 #else
 #if defined(CONFIG_VENDER_MCD) && defined(CONFIG_CAMERA_OTPROM_SUPPORT_FRONT)
 	rom_position = 0;

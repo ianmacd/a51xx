@@ -13,10 +13,10 @@
 #define OUI_SAMSUNG                                     0x0000f0
 #define SLSI_NL80211_GSCAN_SUBCMD_RANGE_START           0x1000
 #define SLSI_NL80211_GSCAN_EVENT_RANGE_START            0x01
-#define SLSI_NL80211_LOGGING_SUBCMD_RANGE_START           0x1400
+#define SLSI_NL80211_RTT_SUBCMD_RANGE_START             0x1100
+#define SLSI_NL80211_LOGGING_SUBCMD_RANGE_START         0x1400
 #define SLSI_NL80211_NAN_SUBCMD_RANGE_START             0x1500
-#define SLSI_NL80211_RTT_SUBCMD_RANGE_START    0x1100
-#define SLSI_NL80211_APF_SUBCMD_RANGE_START    0x1600
+#define SLSI_NL80211_APF_SUBCMD_RANGE_START             0x1600
 #define SLSI_GSCAN_SCAN_ID_START                        0x410
 #define SLSI_GSCAN_SCAN_ID_END                          0x500
 
@@ -318,6 +318,9 @@ enum slsi_hal_vendor_subcmds {
 	SLSI_NL80211_VENDOR_SUBCMD_GET_ROAMING_CAPABILITIES,
 	SLSI_NL80211_VENDOR_SUBCMD_SET_ROAMING_STATE,
 	SLSI_NL80211_VENDOR_SUBCMD_SET_LATENCY_MODE,
+	SLSI_NL80211_VENDOR_SUBCMD_RTT_GET_CAPABILITIES = SLSI_NL80211_RTT_SUBCMD_RANGE_START,
+	SLSI_NL80211_VENDOR_SUBCMD_RTT_RANGE_START,
+	SLSI_NL80211_VENDOR_SUBCMD_RTT_RANGE_CANCEL,
 	SLSI_NL80211_VENDOR_SUBCMD_START_LOGGING = SLSI_NL80211_LOGGING_SUBCMD_RANGE_START,
 	SLSI_NL80211_VENDOR_SUBCMD_TRIGGER_FW_MEM_DUMP,
 	SLSI_NL80211_VENDOR_SUBCMD_GET_FW_MEM_DUMP,
@@ -346,9 +349,6 @@ enum slsi_hal_vendor_subcmds {
 	SLSI_NL80211_VENDOR_SUBCMD_NAN_DATA_REQUEST_INITIATOR,
 	SLSI_NL80211_VENDOR_SUBCMD_NAN_DATA_INDICATION_RESPONSE,
 	SLSI_NL80211_VENDOR_SUBCMD_NAN_DATA_END,
-	SLSI_NL80211_VENDOR_SUBCMD_RTT_GET_CAPABILITIES = SLSI_NL80211_RTT_SUBCMD_RANGE_START,
-	SLSI_NL80211_VENDOR_SUBCMD_RTT_RANGE_START,
-	SLSI_NL80211_VENDOR_SUBCMD_RTT_RANGE_CANCEL,
 	SLSI_NL80211_VENDOR_SUBCMD_APF_SET_FILTER = SLSI_NL80211_APF_SUBCMD_RANGE_START,
 	SLSI_NL80211_VENDOR_SUBCMD_APF_GET_CAPABILITIES,
 	SLSI_NL80211_VENDOR_SUBCMD_APF_READ_FILTER
@@ -394,7 +394,8 @@ enum slsi_vendor_event_values {
 	SLSI_NL80211_NAN_TRANSMIT_FOLLOWUP_STATUS,
 	SLSI_NAN_EVENT_NDP_REQ,
 	SLSI_NAN_EVENT_NDP_CFM,
-	SLSI_NAN_EVENT_NDP_END
+	SLSI_NAN_EVENT_NDP_END,
+	SLSI_NL80211_VENDOR_RCL_CHANNEL_LIST_EVENT = 30
 };
 
 enum slsi_lls_interface_mode {
@@ -918,10 +919,19 @@ struct slsi_rtt_capabilities {
 				      */
 };
 
+/*Data Structure to store rtt_id and list of mac_addresses which is being processed.*/
+struct slsi_rtt_id_params {
+	u8  fapi_req_id;
+	u32 hal_request_id;
+	u32 peer_count;
+	u8 peers[];
+};
+
 /* RTT configuration */
 struct slsi_rtt_config {
 	u8 peer_addr[ETH_ALEN];                 /* peer device mac address */
-	u16 type;            /* 1-sided or 2-sided RTT */
+	u8 rtt_peer;                  /* optional - peer device hint (STA, P2P, AP) */
+	u8 rtt_type;            /* 1-sided or 2-sided RTT */
 	u16 channel_freq;     /* Required for STA-AP mode, optional for P2P, NBD etc. */
 	u16 channel_info;
 	u8 burst_period;         /* Time interval between bursts (units: 100 ms). */
@@ -968,7 +978,7 @@ struct slsi_rtt_config {
 
 #define MAX_24G_CHANNELS 14  /*Max number of 2.4G channels*/
 #define MAX_5G_CHANNELS 25  /*Max number of 5G channels*/
-#define MAX_CHAN_VALUE_ACS MAX_24G_CHANNELS + MAX_5G_CHANNELS
+#define MAX_CHAN_VALUE_ACS (MAX_24G_CHANNELS + MAX_5G_CHANNELS)
 #define MAX_AP_THRESHOLD 10  /*Max AP threshold in ACS*/
 
 struct slsi_acs_chan_info {
@@ -997,6 +1007,14 @@ struct slsi_acs_request {
 	u8 ch_list_len;
 };
 
+struct slsi_logging_ap_info {
+	short score;
+	short rssi;
+	u8 mac[ETH_ALEN];
+	u32 tp_score;
+	u32 ch_util;
+};
+
 void slsi_nl80211_vendor_init(struct slsi_dev *sdev);
 void slsi_nl80211_vendor_deinit(struct slsi_dev *sdev);
 u8 slsi_gscan_get_scan_policy(enum wifi_band band);
@@ -1009,13 +1027,9 @@ int slsi_mib_get_gscan_cap(struct slsi_dev *sdev, struct slsi_nl_gscan_capabilit
 void slsi_rx_rssi_report_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb);
 int slsi_mib_get_apf_cap(struct slsi_dev *sdev, struct net_device *dev);
 int slsi_mib_get_rtt_cap(struct slsi_dev *sdev, struct net_device *dev, struct slsi_rtt_capabilities *cap);
-int slsi_mlme_add_range_req(struct slsi_dev *sdev, u8 count, struct slsi_rtt_config *nl_rtt_params,
-			    u16 rtt_id, u16 vif_idx, u8 *source_addr);
-int slsi_mlme_del_range_req(struct slsi_dev *sdev, struct net_device *dev, u16 count, u8 *addr, u16 rtt_id);
 void slsi_rx_range_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb);
 void slsi_rx_range_done_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb);
 int slsi_tx_rate_calc(struct sk_buff *nl_skb, u16 fw_rate, int res, bool tx_rate);
-void slsi_check_num_radios(struct slsi_dev *sdev);
 void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb);
 #ifdef CONFIG_SCSC_WLAN_DEBUG
 char *slsi_print_event_name(int event_id);

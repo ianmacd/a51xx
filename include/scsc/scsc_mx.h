@@ -115,6 +115,11 @@ enum scsc_qos_config {
  */
 #define MX_SYSERR_LEVEL_7		(7)
 
+/* System Error level 7
+ * Firmware halt and full restart (not just drivers) required
+ */
+#define MX_SYSERR_LEVEL_8		(8)
+
 /* Null error code */
 #define MX_NULL_SYSERR			(0xFFFF)
 
@@ -204,8 +209,14 @@ struct wlbt_fm_params {
 	u32 freq;		/* Frequency (Hz) in use by FM radio */
 };
 
+/* Shared Data BT-ABOX */
+struct scsc_btabox_data {
+       unsigned long btaboxmem_start;
+       size_t        btaboxmem_size;
+};
 
 #define PANIC_RECORD_SIZE			64
+#define PANIC_STACK_RECORD_SIZE			256
 #define PANIC_RECORD_DUMP_BUFFER_SZ		4096
 
 /* WARNING: THIS IS INTERRUPT CONTEXT!
@@ -349,6 +360,9 @@ int scsc_service_pm_qos_add_request(struct scsc_service *service, enum scsc_qos_
 int scsc_service_pm_qos_update_request(struct scsc_service *service, enum scsc_qos_config config);
 int scsc_service_pm_qos_remove_request(struct scsc_service *service);
 #endif
+
+/* Return the panic record */
+int scsc_service_get_panic_record(struct scsc_service *service, u8 *dst, u16 max_size);
 
 /* MXLOGGER API */
 /* If there is no service/mxman associated, register the observer as global (will affect all the mx instanes)*/

@@ -77,7 +77,7 @@ ifeq ($(CONFIG_SOC_EXYNOS7872),y)
 	scsc_platform_mif-$(CONFIG_SCSC_PLATFORM) += platform_mif.o
 endif
 ifeq ($(CONFIG_SOC_EXYNOS7885),y)
-	scsc_platform_mif-$(CONFIG_SCSC_PLATFORM) += platform_mif.o
+	scsc_platform_mif-$(CONFIG_SCSC_PLATFORM) += platform_mif_7885.o
 endif
 
 #core_module for static functions and registration client module (all the service driver modules -wlan, bt,...-)
@@ -116,6 +116,8 @@ scsc_mx-$(CONFIG_SCSC_SMAPPER) += mifsmapper.o
 scsc_mx-$(CONFIG_SCSC_WLBTD) += scsc_wlbtd.o
 
 scsc_mx-$(CONFIG_SCSC_QOS) += mifqos.o
+
+scsc_mx-$(CONFIG_SCSC_LAST_PANIC_IN_DRAM) += scsc_log_in_dram.o
 
 ifneq ($(CONFIG_SCSC_CM_MX_CLIENT_TEST),n)
 obj-$(CONFIG_SCSC_CM_MX_CLIENT_TEST) += mx_client_test.o

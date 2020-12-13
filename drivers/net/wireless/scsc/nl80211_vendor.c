@@ -38,8 +38,8 @@
 #define SLSI_EPNO_AUTH_FIELD_WEP_OPEN  1
 #define SLSI_EPNO_AUTH_FIELD_WPA_PSK   2
 #define SLSI_EPNO_AUTH_FIELD_WPA_EAP   4
-#define WIFI_EVENT_FW_BTM_FRAME_REQUEST    56  // Request for a BTM frame is received
-#define WIFI_EVENT_FW_BTM_FRAME_RESPONSE   57     // A BTM frame is transmitted.
+#define WIFI_EVENT_FW_BTM_FRAME_REQUEST    56  /* Request for a BTM frame is received */
+#define WIFI_EVENT_FW_BTM_FRAME_RESPONSE   57     /* A BTM frame is transmitted. */
 #define WIFI_EVENT_FW_NR_FRAME_REQUEST     58
 #define WIFI_EVENT_FW_RM_FRAME_RESPONSE    59
 #define WIFI_EVENT_FW_CONNECTION_ATTEMPT_ABORTED   60
@@ -50,40 +50,67 @@
 #define WIFI_EVENT_FW_FTM_RANGE_REQUEST           65
 #define WIFI_EVENT_FW_NAN_ROLE_TYPE        66
 #define WIFI_EVENT_FW_FRAME_TRANSMIT_FAILURE   67
+#define WIFI_EVENT_FW_NR_FRAME_RESPONSE   68
+#define WIFI_EVENT_NAN_AVAILABILITY_UPDATE 69   /* NDL Schedule setup or updated. */
+#define WIFI_EVENT_NAN_ULW_UPDATE               70   /* ULW added or removed. */
+#define WIFI_EVENT_NAN_TRAFFIC_UPDATE         71   /* NAN Traffic Information. */
 
-#define SLSI_WIFI_TAG_VD_CHANNEL_UTILISATION   0xf01a
-#define SLSI_WIFI_TAG_VD_ROAMING_REASON           0xf019
-#define SLSI_WIFI_TAG_VD_BTM_REQUEST_MODE      0xf01b
+#define SLSI_WIFI_TAG_VD_RETRY_COUNT          0xf00f
+#define SLSI_WIFI_TAG_VD_EAPOL_KEY_TYPE       0xF008
+#define SLSI_WIFI_TAG_VD_SCAN_TYPE            0xf012
+#define SLSI_WIFI_TAG_VD_VIF_ID               0xf018
+#define SLSI_WIFI_TAG_VD_ROAMING_REASON       0xf019
+#define SLSI_WIFI_TAG_VD_CHANNEL_UTILISATION  0xf01a
+#define SLSI_WIFI_TAG_VD_BTM_REQUEST_MODE     0xf01b
 #define SLSI_WIFI_TAG_VD_BTM_RESPONSE_STATUS  0xf01c
-#define SLSI_WIFI_TAG_VD_RETRY_COUNT                0xf00f
-#define SLSI_WIFI_TAG_VD_EAPOL_KEY_TYPE           0xF008
-#define SLSI_WIFI_TAG_VD_SCAN_TYPE                     0xf012
-#define SLSI_WIFI_TAG_VD_SCORE                      0xf01d
-#define SLSI_WIFI_TAG_VD_RSSI_THRESHOLD             0xf01e
-#define SLSI_WIFI_TAG_VD_OPERATING_CLASS           0xf022
-#define SLSI_WIFI_TAG_VD_MEASUREMENT_MODE       0xf023
+#define SLSI_WIFI_TAG_VD_SCORE                0xf01d
+#define SLSI_WIFI_TAG_VD_RSSI_THRESHOLD       0xf01e
+#define SLSI_WIFI_TAG_VD_CANDIDATE_LIST_COUNT 0xf021
+#define SLSI_WIFI_TAG_VD_OPERATING_CLASS      0xf022
+#define SLSI_WIFI_TAG_VD_MEASUREMENT_MODE     0xf023
 #define SLSI_WIFI_TAG_VD_MEASUREMENT_DURATION 0xf024
-#define SLSI_WIFI_TAG_VD_MIN_AP_COUNT                0xf025
-#define SLSI_WIFI_TAG_VD_CANDIDATE_LIST_COUNT   0xf021
-#define SLSI_WIFI_TAG_VD_CLUSTER_ID                      0xf026
-#define SLSI_WIFI_TAG_VD_NAN_ROLE                        0xf027
-#define SLSI_WIFI_TAG_VD_NAN_AMR                         0xf028
-#define SLSI_WIFI_TAG_VD_NAN_NMI                          0xf02a
-#define SLSI_WIFI_TAG_VD_NAN_HOP_COUNT              0xf029
-#define SLSI_WIFI_TAG_VD_MESSAGE_TYPE                 0xf02b
+#define SLSI_WIFI_TAG_VD_MIN_AP_COUNT         0xf025
+#define SLSI_WIFI_TAG_VD_CLUSTER_ID           0xf026
+#define SLSI_WIFI_TAG_VD_NAN_ROLE             0xf027
+#define SLSI_WIFI_TAG_VD_NAN_AMR              0xf028
+#define SLSI_WIFI_TAG_VD_NAN_HOP_COUNT        0xf029
+#define SLSI_WIFI_TAG_VD_NAN_NMI              0xf02a
+#define SLSI_WIFI_TAG_VD_MESSAGE_TYPE         0xf02b
+#define SLSI_WIFI_TAG_VD_ESTIMATED_TP         0xf02c
+#define SLSI_WIFI_TAG_VD_EXPIRED_TIMER_VALUE  0xf02d
+#define SLSI_WIFI_TAG_VD_MASTER_TSF           0xf030
+#define SLSI_WIFI_TAG_VD_SCHEDULE_TYPE        0xf031
+#define SLSI_WIFI_TAG_VD_START_OFFSET         0xf032
+#define SLSI_WIFI_TAG_VD_SLOT_DURATION        0xf033
+#define SLSI_WIFI_TAG_VD_SLOT_PERIOD          0xf034
+#define SLSI_WIFI_TAG_VD_BITMAP               0xf035
+#define SLSI_WIFI_TAG_VD_CHANNEL_INFO         0xf036
+#define SLSI_WIFI_TAG_VD_ULW_REASON           0xf037
+#define SLSI_WIFI_TAG_VD_ULW_INDEX            0xf038
+#define SLSI_WIFI_TAG_VD_ULW_START_TIME       0xf039
+#define SLSI_WIFI_TAG_VD_ULW_PERIOD           0xf03a
+#define SLSI_WIFI_TAG_VD_ULW_DURATION         0xf03b
+#define SLSI_WIFI_TAG_VD_ULW_COUNT            0xf03c
+#define SLSI_WIFI_TAG_VD_NAN_RX_TOTAL         0xf03d
+#define SLSI_WIFI_TAG_VD_NAN_TX_TOTAL         0xf03e
+#define SLSI_WIFI_TAG_VD_NAN_RX_AVERAGE       0xf03f
+#define SLSI_WIFI_TAG_VD_NAN_TX_AVERAGE       0xf040
+#define SLSI_WIFI_TAG_VD_PARAMETER_SET        0xff00
 
 #define SLSI_WIFI_EAPOL_KEY_TYPE_GTK                      0x0000
 #define SLSI_WIFI_EAPOL_KEY_TYPE_PTK                      0x0001
-#define SLSI_WIFI_ROAMING_SEARCH_REASON_RESERVED   0
-#define SLSI_WIFI_ROAMING_SEARCH_REASON_LOW_RSSI             1
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_RESERVED              0
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_LOW_RSSI              1
 #define SLSI_WIFI_ROAMING_SEARCH_REASON_LINK_LOSS             2
-#define SLSI_WIFI_ROAMING_SEARCH_REASON_BTM_REQ                3
-#define SLSI_WIFI_ROAMING_SEARCH_REASON_CU_TRIGGER           4
-#define SLSI_WIFI_ROAMING_SEARCH_REASON_EMERGENCY            5
-#define SLSI_WIFI_ROAMING_SEARCH_REASON_IDLE                       6
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_BTM_REQ               3
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_CU_TRIGGER            4
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_EMERGENCY             5
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_IDLE                  6
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_SCAN_TIMER1_EXPIRY    7
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_SCAN_TIMER2_EXPIRY    8
+#define SLSI_WIFI_ROAMING_SEARCH_REASON_INACTIVE_TIMER_EXPIRY 9
 
 #define MAX_SSID_LEN 100
-#define MAX_CHANNEL_COUNT 40
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
@@ -156,6 +183,7 @@ char *slsi_print_event_name(int event_id)
 int slsi_vendor_event(struct slsi_dev *sdev, int event_id, const void *data, int len)
 {
 	struct sk_buff *skb;
+	int            ret = 0;
 
 #ifdef CONFIG_SCSC_WLAN_DEBUG
 	SLSI_DBG1_NODEV(SLSI_MLME, "Event: %s(%d), data = %p, len = %d\n",
@@ -172,7 +200,12 @@ int slsi_vendor_event(struct slsi_dev *sdev, int event_id, const void *data, int
 		return -ENOMEM;
 	}
 
-	nla_put_nohdr(skb, len, data);
+	ret = nla_put_nohdr(skb, len, data);
+	if (ret) {
+		SLSI_ERR(sdev, "Error in nla_put*:%x\n", ret);
+		kfree_skb(skb);
+		return -EINVAL;
+	}
 
 	cfg80211_vendor_event(skb, GFP_KERNEL);
 
@@ -182,6 +215,7 @@ int slsi_vendor_event(struct slsi_dev *sdev, int event_id, const void *data, int
 static int slsi_vendor_cmd_reply(struct wiphy *wiphy, const void *data, int len)
 {
 	struct sk_buff *skb;
+	int            ret = 0;
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, len);
 	if (!skb) {
@@ -189,8 +223,12 @@ static int slsi_vendor_cmd_reply(struct wiphy *wiphy, const void *data, int len)
 		return -ENOMEM;
 	}
 
-	nla_put_nohdr(skb, len, data);
-
+	ret = nla_put_nohdr(skb, len, data);
+	if (ret) {
+		SLSI_ERR_NODEV("Error in nla_put_*:%x\n", ret);
+		kfree_skb(skb);
+		return -EINVAL;
+	}
 	return cfg80211_vendor_cmd_reply(skb);
 }
 
@@ -228,6 +266,7 @@ char *slsi_print_channel_list(int channel_list[], int channel_count)
 	int i, slen = 0;
 	char *string = kmalloc((channel_count * 4) + 1, GFP_KERNEL);  /* channel max characters length(3)+space(1) = 4 */
 	int max_size = (channel_count * 4) + 1;
+
 	if (!string) {
 		SLSI_ERR_NODEV("Failed to allocate channel string\n");
 		return "-1";
@@ -419,9 +458,13 @@ static int slsi_gscan_get_valid_channel(struct wiphy *wiphy,
 		chan_count = 0;
 		SLSI_WARN(sdev, "Invalid Band %d\n", band);
 	}
-	nla_put_u32(reply, GSCAN_ATTRIBUTE_NUM_CHANNELS, chan_count);
-	nla_put(reply, GSCAN_ATTRIBUTE_CHANNEL_LIST, chan_count * sizeof(u32), chan_list);
-
+	ret |= nla_put_u32(reply, GSCAN_ATTRIBUTE_NUM_CHANNELS, chan_count);
+	ret |= nla_put(reply, GSCAN_ATTRIBUTE_CHANNEL_LIST, chan_count * sizeof(u32), chan_list);
+	if (ret) {
+		SLSI_ERR(sdev, "Error in nla_put*:%x\n", ret);
+		kfree_skb(reply);
+		goto exit_with_chan_list;
+	}
 	ret =  cfg80211_vendor_cmd_reply(reply);
 
 	if (ret)
@@ -707,7 +750,7 @@ void slsi_gscan_handle_scan_result(struct slsi_dev *sdev, struct net_device *dev
 	slsi_gscan_hash_add(sdev, scan_res);
 
 out:
-	slsi_kfree_skb(skb);
+	kfree_skb(skb);
 }
 
 u8 slsi_gscan_get_scan_policy(enum wifi_band band)
@@ -1285,9 +1328,9 @@ static int slsi_gscan_get_scan_results(struct wiphy *wiphy,
 		goto exit;
 	}
 
-	nla_put_u32(skb, GSCAN_ATTRIBUTE_SCAN_ID, 0);
-	nla_put_u8(skb, GSCAN_ATTRIBUTE_SCAN_FLAGS, 0);
-	nla_put_u32(skb, GSCAN_ATTRIBUTE_NUM_OF_RESULTS, num_results);
+	ret |= nla_put_u32(skb, GSCAN_ATTRIBUTE_SCAN_ID, 0);
+	ret |= nla_put_u8(skb, GSCAN_ATTRIBUTE_SCAN_FLAGS, 0);
+	ret |= nla_put_u32(skb, GSCAN_ATTRIBUTE_NUM_OF_RESULTS, num_results);
 
 	for (i = 0; i < SLSI_GSCAN_HASH_TABLE_SIZE; i++)
 		while (sdev->gscan_hash_table[i]) {
@@ -1296,7 +1339,7 @@ static int slsi_gscan_get_scan_results(struct wiphy *wiphy,
 			sdev->num_gscan_results--;
 			sdev->buffer_consumed -= scan_res->scan_res_len;
 			/* TODO: If IE is included then HAL is not able to parse the results */
-			nla_put(skb, GSCAN_ATTRIBUTE_SCAN_RESULTS, sizeof(struct slsi_nl_scan_result_param), &scan_res->nl_scan_res);
+			ret |= nla_put(skb, GSCAN_ATTRIBUTE_SCAN_RESULTS, sizeof(struct slsi_nl_scan_result_param), &scan_res->nl_scan_res);
 			kfree(scan_res);
 			num_results--;
 			if (num_results == 0)
@@ -1304,7 +1347,11 @@ static int slsi_gscan_get_scan_results(struct wiphy *wiphy,
 		}
 out:
 	nla_nest_end(skb, scan_hdr);
-
+	if (ret) {
+		SLSI_ERR(sdev, "Error in nla_put*:%x\n", ret);
+		kfree_skb(skb);
+		goto exit;
+	}
 	ret = cfg80211_vendor_cmd_reply(skb);
 exit:
 	SLSI_MUTEX_UNLOCK(ndev_vif->scan_mutex);
@@ -1321,7 +1368,7 @@ void slsi_rx_rssi_report_ind(struct slsi_dev *sdev, struct net_device *dev, stru
 	event_data.rssi = fapi_get_s16(skb, u.mlme_rssi_report_ind.rssi);
 	SLSI_DBG3(sdev, SLSI_GSCAN, "RSSI threshold breached, Current RSSI for %pM= %d\n", event_data.bssid, event_data.rssi);
 	slsi_vendor_event(sdev, SLSI_NL80211_RSSI_REPORT_EVENT, &event_data, sizeof(event_data));
-	slsi_kfree_skb(skb);
+	kfree_skb(skb);
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 }
 
@@ -1443,7 +1490,7 @@ static int slsi_set_bssid_blacklist(struct wiphy *wiphy, struct wireless_dev *wd
 
 	if (acl_data) {
 		acl_data->acl_policy = FAPI_ACLPOLICY_BLACKLIST;
-		ret = slsi_mlme_set_acl(sdev, net_dev, 0, acl_data);
+		ret = slsi_mlme_set_acl(sdev, net_dev, 0, acl_data->acl_policy, acl_data->n_acl_entries, acl_data->mac_addrs);
 		if (ret)
 			SLSI_ERR_NODEV("Failed to set bssid blacklist\n");
 	} else {
@@ -1571,13 +1618,14 @@ static int slsi_start_keepalive_offload(struct wiphy *wiphy, struct wireless_dev
 				  FAPI_MESSAGETYPE_ANY_OTHER,
 				  ndev_vif->sta.keepalive_host_tag[index - 1], 0, 0, 0);
 
-	skb = slsi_alloc_skb_headroom(sizeof(struct ethhdr) + ip_pkt_len, GFP_KERNEL);
+	skb = alloc_skb(SLSI_NETIF_SKB_HEADROOM + SLSI_NETIF_SKB_TAILROOM + sizeof(struct ethhdr) + ip_pkt_len, GFP_KERNEL);
 	if (!skb) {
-		SLSI_WARN_NODEV("Memory allocation failed for skb\n");
+		SLSI_WARN_NODEV("memory allocation failed for skb (size: %d)\n", SLSI_NETIF_SKB_HEADROOM + SLSI_NETIF_SKB_TAILROOM + sizeof(struct ethhdr) + ip_pkt_len);
 		r = -ENOMEM;
 		goto exit;
 	}
 
+	skb_reserve(skb, SLSI_NETIF_SKB_HEADROOM - SLSI_SKB_GET_ALIGNMENT_OFFSET(skb));
 	skb_reset_mac_header(skb);
 	skb_set_network_header(skb, sizeof(struct ethhdr));
 
@@ -1612,7 +1660,7 @@ static int slsi_start_keepalive_offload(struct wiphy *wiphy, struct wireless_dev
 	if (r == 0)
 		ndev_vif->sta.keepalive_host_tag[index - 1] = host_tag;
 	else
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 
 exit:
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
@@ -2455,37 +2503,6 @@ exit:
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 }
 
-void slsi_check_num_radios(struct slsi_dev *sdev)
-{
-	struct slsi_mib_data      mibrsp = { 0, NULL };
-	struct slsi_mib_value     *values = NULL;
-	struct slsi_mib_get_entry get_values[] = {{ SLSI_PSID_UNIFI_RADIO_SCAN_TIME, { 1, 0 } } };
-
-	if (slsi_is_test_mode_enabled()) {
-		SLSI_WARN(sdev, "not supported in WlanLite mode\n");
-		return;
-	}
-
-	/* Expect each mib length in response is <= 15 So assume 15 bytes for each MIB */
-	mibrsp.dataLength = 15 * ARRAY_SIZE(get_values);
-	mibrsp.data = kmalloc(mibrsp.dataLength, GFP_KERNEL);
-	if (!mibrsp.data) {
-		SLSI_ERR(sdev, "Cannot kmalloc %d bytes\n", mibrsp.dataLength);
-		sdev->lls_num_radio = 0;
-		return;
-	}
-
-	values = slsi_read_mibs(sdev, NULL, get_values, ARRAY_SIZE(get_values), &mibrsp);
-	if (!values) {
-		sdev->lls_num_radio = 0;
-	} else {
-		sdev->lls_num_radio = values[0].type == SLSI_MIB_TYPE_NONE ? 1 : 2;
-		kfree(values);
-	}
-
-	kfree(mibrsp.data);
-}
-
 static void slsi_lls_radio_stat_fill(struct slsi_dev *sdev, struct net_device *dev,
 				     struct slsi_lls_radio_stat *radio_stat,
 				     int max_chan_count, int radio_index, int twoorfive)
@@ -2575,11 +2592,9 @@ static int slsi_lls_fill(struct slsi_dev *sdev, u8 **src_buf)
 	int radio_type[2] = {BIT(0), BIT(1)};
 
 	if (sdev->lls_num_radio == 0) {
-		slsi_check_num_radios(sdev);
-		if (sdev->lls_num_radio == 0)
-			return -EIO;
+		SLSI_ERR(sdev, "Number of radios are zero for this platform\n");
+		return -EIO;
 	}
-
 	num_of_radios_supported = sdev->lls_num_radio;
 	net_dev = slsi_get_netdev(sdev, SLSI_NET_INDEX_WLAN);
 
@@ -2757,7 +2772,9 @@ static int slsi_get_feature_set(struct wiphy *wiphy,
 	}
 
 	feature_set |= SLSI_WIFI_HAL_FEATURE_BATCH_SCAN;
+#if !defined(SCSC_SEP_VERSION) || (defined(SCSC_SEP_VERSION) && SCSC_SEP_VERSION >= 110000)
 	feature_set |= SLSI_WIFI_HAL_FEATURE_PNO;
+#endif
 #ifdef CONFIG_SCSC_WLAN_WIFI_SHARING
 	feature_set |= SLSI_WIFI_HAL_FEATURE_AP_STA;
 #endif
@@ -2990,20 +3007,22 @@ static int slsi_rtt_get_capabilities(struct wiphy *wiphy, struct wireless_dev *w
 
 static int slsi_rtt_set_config(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len)
 {
-	int r, type, j = 0;
+	int r, type, j = 0, rtt_id;
 	struct slsi_dev            *sdev = SDEV_FROM_WIPHY(wiphy);
-#ifdef CONFIG_SCSC_WIFI_NAN_ENABLE
 	struct netdev_vif *ndev_vif;
-#endif
 	struct net_device *dev = wdev->netdev;
+#ifdef CONFIG_SCSC_WIFI_NAN_ENABLE
+	struct net_device *nan_dev = slsi_nan_get_netdev(sdev);
+	struct netdev_vif *nan_ndev_vif;
+#endif
 	struct slsi_rtt_config *nl_rtt_params;
+	struct slsi_rtt_id_params *rtt_id_params = NULL;
 	const struct nlattr *iter, *outer, *inner;
 	u8 source_addr[ETH_ALEN];
 	int tmp, tmp1, tmp2;
-	u16 rtt_id = 0;
+	u16 request_id = 0;
 	u8 num_devices = 0;
-	u16 rtt_peer = SLSI_RTT_PEER_AP;
-	u16 vif_idx = 0;
+	u8 rtt_peer = SLSI_RTT_PEER_AP;
 	u16 channel_freq = 0;
 
 	SLSI_DBG1_NODEV(SLSI_GSCAN, "SUBCMD_RTT_RANGE_START\n");
@@ -3011,36 +3030,40 @@ static int slsi_rtt_set_config(struct wiphy *wiphy, struct wireless_dev *wdev, c
 		SLSI_ERR(sdev, "RTT not supported.\n");
 		return WIFI_HAL_ERROR_NOT_SUPPORTED;
 	}
+	if (!dev) {
+		SLSI_ERR(sdev, "dev is NULL!!\n");
+		return -EINVAL;
+	}
+
+	ndev_vif = netdev_priv(dev);
+	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 	nla_for_each_attr(iter, data, len, tmp) {
 		type = nla_type(iter);
 		switch (type) {
 		case SLSI_RTT_ATTRIBUTE_TARGET_CNT:
 			if (slsi_util_nla_get_u8(iter, &num_devices))
-				return -EINVAL;
+				goto exit;
 			SLSI_DBG1_NODEV(SLSI_GSCAN, "Target cnt %d\n", num_devices);
 			break;
 		case SLSI_RTT_ATTRIBUTE_TARGET_ID:
-			if (slsi_util_nla_get_u16(iter, &rtt_id))
-				return -EINVAL;
-			SLSI_DBG1_NODEV(SLSI_GSCAN, "Target id %d\n", rtt_id);
+			if (slsi_util_nla_get_u16(iter, &request_id))
+				goto exit;
+			SLSI_DBG1_NODEV(SLSI_GSCAN, "Request ID: %d\n", request_id);
 			break;
 		default:
-			SLSI_ERR_NODEV("Unexpected RTT attribute:type - %d\n", type);
 			break;
 		}
 	}
-	if (rtt_id > (sizeof(sdev->rtt_vif)) / sizeof(sdev->rtt_vif[0])) {
-		SLSI_ERR_NODEV("Invalid value for rtt index!\n");
-		return -EINVAL;
-	}
+
 	if (!num_devices) {
 		SLSI_ERR_NODEV("No device found for rtt configuration!\n");
-		return -EINVAL;
+		goto exit;
 	}
 	/* Allocate memory for the received config params */
 	nl_rtt_params = kcalloc(num_devices, sizeof(*nl_rtt_params), GFP_KERNEL);
 	if (!nl_rtt_params) {
-		SLSI_ERR_NODEV("Failed for allocate memory for config rtt_param\n");
+		SLSI_ERR_NODEV("Failed to allocate memory for config rtt_param\n");
+		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 		return -ENOMEM;
 	}
 	nla_for_each_attr(iter, data, len, tmp) {
@@ -3052,74 +3075,72 @@ static int slsi_rtt_set_config(struct wiphy *wiphy, struct wireless_dev *wdev, c
 					switch (nla_type(inner)) {
 					case SLSI_RTT_ATTRIBUTE_TARGET_MAC:
 						if (slsi_util_nla_get_data(inner, ETH_ALEN, nl_rtt_params[j].peer_addr))
-							return -EINVAL;
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_TYPE:
-						if (slsi_util_nla_get_u16(inner, &(nl_rtt_params[j].type)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u8(inner, &nl_rtt_params[j].rtt_type))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_PEER:
-						if (slsi_util_nla_get_u16(inner, &rtt_peer))
-							return -EINVAL;
+						if (slsi_util_nla_get_u8(inner, &rtt_peer))
+							goto exit;
+						nl_rtt_params[j].rtt_peer = rtt_peer;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_CHAN_FREQ:
 						if (slsi_util_nla_get_u16(inner, &channel_freq))
-							return -EINVAL;
+							goto exit;
 						nl_rtt_params[j].channel_freq = channel_freq * 2;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_PERIOD:
-						if (slsi_util_nla_get_u8(inner, &(nl_rtt_params[j].burst_period)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u8(inner, &nl_rtt_params[j].burst_period))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_NUM_BURST:
-						if (slsi_util_nla_get_u8(inner, &(nl_rtt_params[j].num_burst)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u8(inner, &nl_rtt_params[j].num_burst))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_NUM_FTM_BURST:
-						if (slsi_util_nla_get_u8(inner, &(nl_rtt_params[j].num_frames_per_burst)))
-							 return -EINVAL;
+						if (slsi_util_nla_get_u8(inner, &nl_rtt_params[j].num_frames_per_burst))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTMR:
-						if (slsi_util_nla_get_u8(inner, &(nl_rtt_params[j].num_retries_per_ftmr)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u8(inner, &nl_rtt_params[j].num_retries_per_ftmr))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_BURST_DURATION:
-						if (slsi_util_nla_get_u8(inner, &(nl_rtt_params[j].burst_duration)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u8(inner, &nl_rtt_params[j].burst_duration))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_PREAMBLE:
-						if (slsi_util_nla_get_u16(inner, &(nl_rtt_params[j].preamble)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u16(inner, &nl_rtt_params[j].preamble))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_BW:
-						if (slsi_util_nla_get_u16(inner, &(nl_rtt_params[j].bw)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u16(inner, &nl_rtt_params[j].bw))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_LCI:
-						if (slsi_util_nla_get_u16(inner, &(nl_rtt_params[j].LCI_request)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u16(inner, &nl_rtt_params[j].LCI_request))
+							goto exit;
 						break;
 					case SLSI_RTT_ATTRIBUTE_TARGET_LCR:
-						if (slsi_util_nla_get_u16(inner, &(nl_rtt_params[j].LCR_request)))
-							return -EINVAL;
+						if (slsi_util_nla_get_u16(inner, &nl_rtt_params[j].LCR_request))
+							goto exit;
 						break;
 					default:
-						SLSI_ERR_NODEV("Unknown RTT INFO ATTRIBUTE type: %d\n", type);
 						break;
 					}
 				}
 				j++;
 				if (j > num_devices)
-					goto exit;
+					goto exit_from_loop;
 			}
 			break;
 		default:
-			SLSI_ERR_NODEV("No ATTRIBUTE_Target cnt - %d\n", type);
 			break;
 		}
 	}
-
-exit:
+exit_from_loop:
 	SLSI_ETHER_COPY(source_addr, dev->dev_addr);
 
 	if (rtt_peer == SLSI_RTT_PEER_NAN) {
@@ -3127,31 +3148,67 @@ exit:
 		if (!slsi_dev_nan_supported(sdev)) {
 			SLSI_ERR(sdev, "NAN not supported(mib:%d)\n", sdev->nan_enabled);
 			kfree(nl_rtt_params);
+			SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 			return WIFI_HAL_ERROR_NOT_SUPPORTED;
 		}
-		ndev_vif = netdev_priv(dev);
-		if (ndev_vif->activated) {
-			vif_idx = ndev_vif->vif_type;
-		} else {
+		if (!nan_dev) {
+			SLSI_ERR(sdev, "dev is NULL!!\n");
+			kfree(nl_rtt_params);
+			goto exit;
+		}
+		nan_ndev_vif = netdev_priv(nan_dev);
+		if (!nan_ndev_vif->activated) {
 			SLSI_ERR(sdev, "NAN vif not activated\n");
 			kfree(nl_rtt_params);
-			return -EINVAL;
+			goto exit;
 		}
 #else
 		SLSI_ERR(sdev, "NAN not enabled\n");
+		kfree(nl_rtt_params);
+		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 		return -ENOTSUPP;
 #endif
 	}
-	r = slsi_mlme_add_range_req(sdev, num_devices, nl_rtt_params, rtt_id, vif_idx, source_addr);
+	/* Check for the first available rtt_id and allocate memory for rtt_id_aprams. */
+	for (rtt_id = SLSI_MIN_RTT_ID; rtt_id <= SLSI_MAX_RTT_ID; rtt_id++) {
+		if (!sdev->rtt_id_params[rtt_id - 1]) {
+			rtt_id_params = kzalloc(sizeof(struct slsi_rtt_id_params) + ETH_ALEN * num_devices, GFP_KERNEL);
+			if (!rtt_id_params) {
+				SLSI_INFO(sdev, "Failed to allocate memory for rtt_id_params.\n");
+				kfree(nl_rtt_params);
+				SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
+				return -ENOMEM;
+			}
+			sdev->rtt_id_params[rtt_id - 1] = rtt_id_params;
+			break;
+		}
+	}
+	if (rtt_id > SLSI_MAX_RTT_ID) {
+		SLSI_ERR_NODEV("RTT_ID(1-7) is in use currently!!\n");
+		kfree(nl_rtt_params);
+		goto exit;
+	}
+	r = slsi_mlme_add_range_req(sdev, dev, num_devices, nl_rtt_params, rtt_id, source_addr);
 	if (r) {
 		r = -EINVAL;
+		kfree(rtt_id_params);
+		sdev->rtt_id_params[rtt_id - 1] = NULL;
 		SLSI_ERR_NODEV("Failed to set rtt config\n");
 	} else {
-		sdev->rtt_vif[rtt_id] = vif_idx;
+		rtt_id_params->fapi_req_id = rtt_id;
+		rtt_id_params->hal_request_id = request_id;
+		rtt_id_params->peer_count = num_devices;
+		/*Store mac addr list corresponding to each rtt_id. */
+		for (j = 0; j < num_devices; j++)
+			SLSI_ETHER_COPY(&rtt_id_params->peers[j * ETH_ALEN], nl_rtt_params[j].peer_addr);
 		SLSI_DBG1_NODEV(SLSI_GSCAN, "Successfully set rtt config\n");
 	}
 	kfree(nl_rtt_params);
+	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	return r;
+exit:
+	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
+	return -EINVAL;
 }
 
 int slsi_tx_rate_calc(struct sk_buff *nl_skb, u16 fw_rate, int res, bool tx_rate)
@@ -3174,7 +3231,7 @@ int slsi_tx_rate_calc(struct sk_buff *nl_skb, u16 fw_rate, int res, bool tx_rate
 		chan_bw_idx = (fw_rate & SLSI_FW_API_RATE_BW_FIELD) >> 9;
 		gi_idx = ((fw_rate & SLSI_FW_API_RATE_SGI) == SLSI_FW_API_RATE_SGI) ? 1 : 0;
 		mcs = SLSI_FW_API_RATE_HT_MCS_FIELD & fw_rate;
-		if ((chan_bw_idx < 2) && (mcs <= 7)) {
+		if (chan_bw_idx < 2 && mcs <= 7) {
 			data_rate = (nss + 1) * slsi_rates_table[chan_bw_idx][gi_idx][mcs];
 		} else if (mcs == 32 && chan_bw_idx == 1) {
 			if (gi_idx == 1)
@@ -3195,7 +3252,7 @@ int slsi_tx_rate_calc(struct sk_buff *nl_skb, u16 fw_rate, int res, bool tx_rate
 		nss = (SLSI_FW_API_RATE_VHT_NSS_FIELD & fw_rate) >> 4;
 		mcs = SLSI_FW_API_RATE_VHT_MCS_FIELD & fw_rate;
 		/* Bandwidth (BW): 0x0= 20 MHz, 0x1= 40 MHz, 0x2= 80 MHz, 0x3= 160/ 80+80 MHz. 0x3 is not supported */
-		if ((chan_bw_idx <= 2) && (mcs <= 9))
+		if (chan_bw_idx <= 2 && mcs <= 9)
 			data_rate = (nss + 1) * slsi_rates_table[chan_bw_idx][gi_idx][mcs];
 		else
 			SLSI_WARN_NODEV("FW DATA RATE decode error fw_rate:%x, bw:%x, mcs_idx:%x,nss : %d\n",
@@ -3226,6 +3283,7 @@ void slsi_rx_range_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_
 	u32 i, tm;
 	u16 rtt_entry_count = fapi_get_u16(skb, u.mlme_range_ind.entries);
 	u16 rtt_id = fapi_get_u16(skb, u.mlme_range_ind.rtt_id);
+	u16 request_id = sdev->rtt_id_params[rtt_id - 1]->hal_request_id;
 	u32 tmac = fapi_get_u32(skb, u.mlme_range_ind.spare_3);
 	int data_len = fapi_get_datalen(skb);
 	u8                *ip_ptr, *start_ptr;
@@ -3262,7 +3320,7 @@ void slsi_rx_range_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_
 	ip_ptr = fapi_get_data(skb);
 	start_ptr = fapi_get_data(skb);
 	res |= nla_put_u16(nl_skb, SLSI_RTT_ATTRIBUTE_RESULT_CNT, rtt_entry_count);
-	res |= nla_put_u16(nl_skb, SLSI_RTT_ATTRIBUTE_TARGET_ID, rtt_id);
+	res |= nla_put_u16(nl_skb, SLSI_RTT_ATTRIBUTE_TARGET_ID, request_id);
 	res |= nla_put_u8(nl_skb, SLSI_RTT_ATTRIBUTE_RESULTS_PER_TARGET, 1);
 	for (i = 0; i < rtt_entry_count; i++) {
 		nlattr_nested = nla_nest_start(nl_skb, SLSI_RTT_ATTRIBUTE_RESULT);
@@ -3291,11 +3349,7 @@ void slsi_rx_range_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_
 		ip_ptr += 2;
 		res |= nla_put_u8(nl_skb, SLSI_RTT_EVENT_ATTR_RETRY_AFTER_DURATION, *ip_ptr++);
 
-		le16_ptr = (__le16 *)&ip_ptr[i];
-		value = le16_to_cpu(*le16_ptr);
-		res |= nla_put_u16(nl_skb, SLSI_RTT_EVENT_ATTR_TYPE, value);
-		ip_ptr += 2;
-
+		res |= nla_put_u8(nl_skb, SLSI_RTT_EVENT_ATTR_TYPE, *ip_ptr++);
 		le16_ptr = (__le16 *)&ip_ptr[i];
 		value = le16_to_cpu(*le16_ptr);
 		res |= nla_put_u16(nl_skb, SLSI_RTT_EVENT_ATTR_RSSI, value);
@@ -3370,7 +3424,7 @@ void slsi_rx_range_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_
 	}
 	cfg80211_vendor_event(nl_skb, GFP_KERNEL);
 exit:
-	slsi_kfree_skb(skb);
+	kfree_skb(skb);
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 }
 
@@ -3378,75 +3432,144 @@ void slsi_rx_range_done_ind(struct slsi_dev *sdev, struct net_device *dev, struc
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	u16 rtt_id = fapi_get_u16(skb, u.mlme_range_ind.rtt_id);
+	u16 request_id = sdev->rtt_id_params[rtt_id - 1]->hal_request_id;
+
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 #ifdef CONFIG_SCSC_WLAN_DEBUG
 	SLSI_DBG1_NODEV(SLSI_GSCAN, "Event: %s(%d)\n",
 			slsi_print_event_name(SLSI_NL80211_RTT_COMPLETE_EVENT), SLSI_NL80211_RTT_COMPLETE_EVENT);
 #endif
-	slsi_vendor_event(sdev, SLSI_NL80211_RTT_COMPLETE_EVENT, &rtt_id, sizeof(rtt_id));
-	slsi_kfree_skb(skb);
+	slsi_vendor_event(sdev, SLSI_NL80211_RTT_COMPLETE_EVENT, &request_id, sizeof(request_id));
+
+	kfree(sdev->rtt_id_params[rtt_id - 1]);
+	sdev->rtt_id_params[rtt_id - 1] = NULL;
+	kfree_skb(skb);
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
+}
+
+/* Function to remove peer from structure rtt_id_params corresponding to rtt_id_idx. */
+void slsi_rtt_remove_peer(struct slsi_dev *sdev, u8 *addr, u8 rtt_id_idx, u8 count_addr)
+{
+	int i = 0, j;
+	u8 zero_addr[ETH_ALEN];
+	u8 remove_id = 1;
+
+	memset(zero_addr, 0, ETH_ALEN);
+	/* Check for each peer if it's exists in the count_addr list if so then set it to zero */
+	for (i = 0; i < sdev->rtt_id_params[rtt_id_idx]->peer_count; i++) {
+		for (j = 0; j < count_addr; j++)
+			if (SLSI_ETHER_EQUAL(&sdev->rtt_id_params[rtt_id_idx]->peers[i * ETH_ALEN],
+					     &addr[j * ETH_ALEN]))
+				SLSI_ETHER_COPY(&sdev->rtt_id_params[rtt_id_idx]->peers[i * ETH_ALEN], zero_addr);
+		/* If peer doesn't exist in addr list then no need to remove this rtt id from rtt_id_params. */
+		if (!SLSI_ETHER_EQUAL(&sdev->rtt_id_params[rtt_id_idx]->peers[i * ETH_ALEN], zero_addr))
+			remove_id = 0;
+	}
+	/* If all the peer addresses are set to zero then remove rtt id and make it available for use */
+	if (remove_id) {
+		SLSI_INFO(sdev, "Remove rtt id:%d\n", rtt_id_idx + 1);
+		kfree(sdev->rtt_id_params[rtt_id_idx]);
+		sdev->rtt_id_params[rtt_id_idx] = NULL;
+	}
 }
 
 static int slsi_rtt_cancel_config(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len)
 {
-	int temp, ret, r = 1, j = 0, type, count = 0;
+	int temp, r = 1, j = 0, type, count = 0, i = 0, k = 0;
 	struct slsi_dev            *sdev = SDEV_FROM_WIPHY(wiphy);
 	struct net_device *dev = wdev->netdev;
+	struct netdev_vif *ndev_vif;
 	u8 *addr;
+	/* List to store requested addresses corresponding to each rtt id which needs to be cancelled. */
+	u8 *cancel_addr_list;
 	const struct nlattr *iter;
-	u16  num_devices = 0, rtt_id = 0;
+	u16  num_devices = 0;
+	u8 count_addr = 0, peer_count = 0;
 
 	SLSI_DBG1_NODEV(SLSI_GSCAN, "RTT_SUBCMD_CANCEL_CONFIG\n");
 	if (!slsi_dev_rtt_supported()) {
 		SLSI_WARN(sdev, "RTT not supported.\n");
 		return -ENOTSUPP;
 	}
+	if (!dev) {
+		SLSI_ERR(sdev, "dev is NULL!!\n");
+		return -EINVAL;
+	}
+
+	ndev_vif = netdev_priv(dev);
+	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 	nla_for_each_attr(iter, data, len, temp) {
 		type = nla_type(iter);
 		switch (type) {
 		case SLSI_RTT_ATTRIBUTE_TARGET_CNT:
-			if (slsi_util_nla_get_u16(iter, &num_devices))
+			if (slsi_util_nla_get_u16(iter, &num_devices)) {
+				SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 				return -EINVAL;
+			}
 			SLSI_DBG1_NODEV(SLSI_GSCAN, "Target cnt %d\n", num_devices);
-			break;
-		case SLSI_RTT_ATTRIBUTE_TARGET_ID:
-			if (slsi_util_nla_get_u16(iter, &rtt_id))
-				return -EINVAL;
-			SLSI_DBG1_NODEV(SLSI_GSCAN, "Target id %d\n", rtt_id);
 			break;
 		default:
 			SLSI_ERR_NODEV("No ATTRIBUTE_Target cnt - %d\n", type);
 			break;
 		}
 	}
-	/* Allocate memory for the received mac addresses */
-	if (num_devices) {
-		addr = kzalloc(ETH_ALEN * num_devices, GFP_KERNEL);
-		if (!addr) {
-			SLSI_ERR_NODEV("Failed for allocate memory for mac addresses\n");
-			ret = -ENOMEM;
-			return ret;
-		}
-		nla_for_each_attr(iter, data, len, temp) {
-			type = nla_type(iter);
-			if (type == SLSI_RTT_ATTRIBUTE_TARGET_MAC) {
-				if (count >= num_devices)
-					break;
-				if (slsi_util_nla_get_data(iter, ETH_ALEN, &addr[j]))
-					continue;
-				j = j + ETH_ALEN;
-				count++;
-			} else {
-				SLSI_ERR_NODEV("No ATTRIBUTE_MAC - %d\n", type);
-			}
-		}
-
-		r = slsi_mlme_del_range_req(sdev, dev, num_devices, addr, rtt_id);
-		kfree(addr);
+	if (!num_devices) {
+		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
+		return r;
 	}
-	if (r)
-		SLSI_ERR_NODEV("Failed to cancel rtt config\n");
+	/* Allocate memory for the received mac addresses */
+	addr = kzalloc(ETH_ALEN * num_devices, GFP_KERNEL);
+	if (!addr) {
+		SLSI_ERR_NODEV("Failed to allocate memory for mac addresses\n");
+		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
+		return -ENOMEM;
+	}
+	nla_for_each_attr(iter, data, len, temp) {
+		type = nla_type(iter);
+		if (type == SLSI_RTT_ATTRIBUTE_TARGET_MAC) {
+			if (count >= num_devices)
+				break;
+			if (slsi_util_nla_get_data(iter, ETH_ALEN, &addr[j]))
+				continue;
+			j = j + ETH_ALEN;
+			count++;
+		} else {
+			SLSI_ERR_NODEV("No ATTRIBUTE_MAC - %d\n", type);
+		}
+	}
+	cancel_addr_list = kzalloc(ETH_ALEN * num_devices, GFP_KERNEL);
+	if (!cancel_addr_list) {
+		SLSI_INFO(sdev, "Failed to allocate memory for cancel_addr_list.\n");
+		kfree(addr);
+		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
+		return -ENOMEM;
+	}
+	/* Iterate over each rtt_id and check if the requested address present in the current peer list. */
+	for (i = 0; i < SLSI_MAX_RTT_ID; i++) {
+		count_addr = 0;
+		if (!sdev->rtt_id_params[i])
+			continue;
+		for (j = 0; j < num_devices; j++) {
+			peer_count = sdev->rtt_id_params[i]->peer_count;
+			for (k = 0; k < peer_count; k++)
+				if (SLSI_ETHER_EQUAL(&sdev->rtt_id_params[i]->peers[k * ETH_ALEN],
+						     &addr[j * ETH_ALEN])) {
+					SLSI_ETHER_COPY(&cancel_addr_list[count_addr * ETH_ALEN], &addr[j * ETH_ALEN]);
+					count_addr++;
+					break;
+				}
+		}
+		if (count_addr) {
+			r = slsi_mlme_del_range_req(sdev, dev, count_addr, cancel_addr_list, i + 1);
+			if (r)
+				SLSI_ERR_NODEV("Failed to cancel rtt config for id:%d\n", i + 1);
+			slsi_rtt_remove_peer(sdev, cancel_addr_list, i, count_addr);
+			memset(cancel_addr_list, 0, ETH_ALEN * num_devices);
+		}
+	}
+	kfree(addr);
+	kfree(cancel_addr_list);
+	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	return r;
 }
 
@@ -3633,9 +3756,15 @@ char *slsi_get_roam_reason_str(int roam_reason)
 	case SLSI_WIFI_ROAMING_SEARCH_REASON_CU_TRIGGER:
 		return "WIFI_ROAMING_SEARCH_REASON_CU_TRIGGER";
 	case SLSI_WIFI_ROAMING_SEARCH_REASON_EMERGENCY:
-		return "ROAMING_SEARCH_REASON_EMERGENCY";
+		return "WIFI_ROAMING_SEARCH_REASON_EMERGENCY";
 	case SLSI_WIFI_ROAMING_SEARCH_REASON_IDLE:
-		return "SLSI_WIFI_ROAMING_SEARCH_REASON_IDLE";
+		return "WIFI_ROAMING_SEARCH_REASON_IDLE";
+	case SLSI_WIFI_ROAMING_SEARCH_REASON_SCAN_TIMER1_EXPIRY:
+		return "WIFI_ROAMING_SEARCH_REASON_SCAN_TIMER1_EXPIRY";
+	case SLSI_WIFI_ROAMING_SEARCH_REASON_SCAN_TIMER2_EXPIRY:
+		return "WIFI_ROAMING_SEARCH_REASON_SCAN_TIMER2_EXPIRY";
+	case SLSI_WIFI_ROAMING_SEARCH_REASON_INACTIVE_TIMER_EXPIRY:
+		return "WIFI_ROAMING_SEARCH_REASON_INACTIVE_TIMER_EXPIRY";
 	default:
 		return "UNKNOWN_REASON";
 	}
@@ -3713,27 +3842,247 @@ char *slsi_get_measure_mode(int measure_mode)
 	}
 }
 
+char *slsi_get_nan_schedule_type_str(int schedule_type)
+{
+	switch (schedule_type) {
+	case 1:
+		return "NAN_FWC";
+	case 2:
+		return "NAN_NDC";
+	case 3:
+		return "NAN_DW";
+	default:
+		return "Undefind";
+	}
+}
+
+char *slsi_get_nan_ulw_reason_str(int ulw_reason)
+{
+	switch (ulw_reason) {
+	case 1:
+		return "Peer Requested";
+	case 2:
+		return "Concurrent Operation";
+	case 3:
+		return "Scan";
+	case 4:
+		return "BT_COEX";
+	case 5:
+		return "Power Saving";
+	case 6:
+		return "Deleted";
+	default:
+		return "Undefined";
+	}
+}
+
+void slsi_handle_nan_rx_event_log_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb)
+{
+	u16 event_id = 0;
+	u64 timestamp = 0;
+	u8 *tlv_data;
+	int tlv_buffer__len = fapi_get_datalen(skb), i = 0;
+	u16 vendor_len, tag_id, tag_len, vtag_id;
+	u32 tag_value, vtag_value;
+	bool multi_param = false, param_set_available = false;
+	u16 vif_idx = 0;
+	u32 nan_role = 0, nan_amr = 0, hop_count = 0, master_tsf = 0, channel = 0;
+	u32 schedule_type = 0, start_offset = 0, slot_duration = 0, slot_bitmap = 0;
+	u32 ulw_reason = 0, ulw_index = 0, ulw_start = 0, ulw_period = 0, ulw_duration = 0, ulw_count = 0;
+	u32 tx_mpdu_total = 0, rx_mpdu_total = 0, slot_avg_rx = 0, slot_avg_tx = 0;
+	u8 nan_cluster_id[6], nan_nmi[6], width = 0, position = 0;
+#ifdef CONFIG_SCSC_WIFI_NAN_ENABLE
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+#endif
+
+	event_id = fapi_get_s16(skb, u.mlme_event_log_ind.event);
+	timestamp = fapi_get_u64(skb, u.mlme_event_log_ind.timestamp);
+	tlv_data = fapi_get_data(skb);
+	while (i + 4 < tlv_buffer__len) {
+		tag_id = le16_to_cpu(*((__le16 *)&tlv_data[i]));
+		tag_len = le16_to_cpu(*((__le16 *)&tlv_data[i + 2]));
+		i += 4;
+		if (i + tag_len > tlv_buffer__len) {
+			SLSI_INFO(sdev, "Incorrect fapi bulk data\n");
+			return;
+		}
+		tag_value = slsi_convert_tlv_data_to_value(&tlv_data[i], tag_len);
+		multi_param = false;
+		switch (tag_id) {
+		case SLSI_WIFI_TAG_CHANNEL:
+			channel = tag_value / 2;
+			break;
+		case SLSI_WIFI_TAG_VENDOR_SPECIFIC:
+			vendor_len = tag_len - 2;
+			vtag_id = le16_to_cpu(*((__le16 *)&tlv_data[i]));
+			vtag_value = slsi_convert_tlv_data_to_value(&tlv_data[i + 2], vendor_len);
+			switch (vtag_id) {
+			case SLSI_WIFI_TAG_VD_CLUSTER_ID:
+				if (vendor_len != ETH_ALEN) {
+					memset(nan_cluster_id, 0, ETH_ALEN);
+					SLSI_ERR(sdev, "Cluser ID should be of 6 bytes,bytes received:%d\n", vendor_len);
+					break;
+				}
+				memcpy(nan_cluster_id, &tlv_data[i], vendor_len);
+				break;
+			case SLSI_WIFI_TAG_VD_NAN_ROLE:
+				nan_role = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_NAN_AMR:
+				nan_amr = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_NAN_NMI:
+				if (vendor_len != ETH_ALEN) {
+					memset(nan_nmi, 0, ETH_ALEN);
+					SLSI_ERR(sdev, "NAN NMI should be of 6 bytes,bytes received:%d\n", vendor_len);
+					break;
+				}
+				memcpy(nan_nmi, &tlv_data[i], vendor_len);
+				break;
+			case SLSI_WIFI_TAG_VD_NAN_HOP_COUNT:
+				hop_count = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_VIF_ID:
+				vif_idx = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_MASTER_TSF:
+				master_tsf = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_CHANNEL_INFO:
+				if (vendor_len < 2) {
+					SLSI_ERR(sdev, "Channel_info should be atleast 2 bytes!\n");
+					break;
+				}
+				width = tlv_data[i + 2];
+				position = tlv_data[i + 3];
+				break;
+			case SLSI_WIFI_TAG_VD_SCHEDULE_TYPE:
+				schedule_type = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_START_OFFSET:
+				start_offset = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_SLOT_DURATION:
+				slot_duration = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_BITMAP:
+				slot_bitmap = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_ULW_REASON:
+				ulw_reason = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_ULW_INDEX:
+				ulw_index = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_ULW_START_TIME:
+				ulw_start = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_ULW_PERIOD:
+				ulw_period = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_ULW_DURATION:
+				ulw_duration = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_ULW_COUNT:
+				ulw_count = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_NAN_RX_TOTAL:
+				rx_mpdu_total = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_NAN_TX_TOTAL:
+				tx_mpdu_total = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_NAN_RX_AVERAGE:
+				slot_avg_rx = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_NAN_TX_AVERAGE:
+				slot_avg_tx = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_PARAMETER_SET:
+				multi_param = true;
+				if (!param_set_available) {
+					param_set_available = true;
+					break;
+				}
+				switch (event_id) {
+				case WIFI_EVENT_NAN_AVAILABILITY_UPDATE:
+					SLSI_INFO(sdev, "WIFI_EVENT_NAN_AVAILABILITY_UPDATE, Vif_Idx: %d, Master_TSF: %d,"
+							"Channel: %d, Width: %d, Primary channel Position: %d, Schedule Type: %s,"
+							"Start Offset: %d, Slot Duration: %d, Slot Bitmap: %d\n",
+						  vif_idx, master_tsf, channel, width, position,
+						  slsi_get_nan_schedule_type_str(schedule_type), start_offset,
+						  slot_duration, slot_bitmap);
+					param_set_available = false;
+					break;
+				case WIFI_EVENT_NAN_TRAFFIC_UPDATE:
+					SLSI_INFO(sdev, "WIFI_EVENT_NAN_TRAFFIC_UPDATE, Rx MPDUs total: %d,"
+							"Tx MPDUs Total: %d, channel: %d, Slot Average Rx:%d,"
+							"Slot Average Tx: %d\n", rx_mpdu_total, tx_mpdu_total, channel,
+						  slot_avg_rx, slot_avg_tx);
+					param_set_available = false;
+					break;
+				}
+				break;
+			}
+			break;
+		}
+		if (multi_param)
+			i += 2; /* To skip VD_PARAMETER_SET */
+		else
+			i += tag_len;
+	}
+	switch (event_id) {
+	case WIFI_EVENT_FW_NAN_ROLE_TYPE:
+		SLSI_INFO(sdev, "WIFI_EVENT_FW_NAN_ROLE_TYPE, Cluster Id:%pM, NAN Role:%s, AMR:%d, NMI:%pM, Hop Count:%d\n",
+			  nan_cluster_id, slsi_get_nan_role_str(nan_role), nan_amr, nan_nmi, hop_count);
+#ifdef CONFIG_SCSC_WIFI_NAN_ENABLE
+		ndev_vif->nan.amr = nan_amr;
+		ndev_vif->nan.hopcount = hop_count;
+		ndev_vif->nan.role = nan_role;
+#endif
+		break;
+	case WIFI_EVENT_NAN_AVAILABILITY_UPDATE:
+		SLSI_INFO(sdev, "WIFI_EVENT_NAN_AVAILABILITY_UPDATE, Vif_Idx: %d, Master_TSF: %d, Channel: %d,"
+				"Width: %d, Primary channel Position: %d, Schedule Type: %s, Start Offset: %d,"
+				"Slot Duration: %d, Slot Bitmap: %d\n", vif_idx, master_tsf, channel, width, position,
+			  slsi_get_nan_schedule_type_str(schedule_type), start_offset, slot_duration, slot_bitmap);
+		break;
+	case WIFI_EVENT_NAN_ULW_UPDATE:
+		SLSI_INFO(sdev, "WIFI_EVENT_NAN_ULW_UPDATE, Vif_Idx: %d, Master_TSF :%d, ULW_Reason:%s, ULW_Index: %d,"
+				" ULW_start_time:%dms, ULW_Period: %dms, ULW_Duration: %dms, ULW_Count: %d, Channel: %d",
+			  vif_idx, master_tsf, slsi_get_nan_ulw_reason_str(ulw_reason), ulw_index, ulw_start,
+			  ulw_period, ulw_duration, ulw_count, channel);
+		break;
+	case WIFI_EVENT_NAN_TRAFFIC_UPDATE:
+		SLSI_INFO(sdev, "WIFI_EVENT_NAN_TRAFFIC_UPDATE, Rx MPDUs total: %d, Tx MPDUs Total: %d, channel: %d,"
+				"Slot Average Rx:%d, Slot Average Tx: %d\n", rx_mpdu_total, tx_mpdu_total, channel,
+			  slot_avg_rx, slot_avg_tx);
+		break;
+	}
+}
+
 void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb)
 {
 	u16 event_id = 0;
 	u64 timestamp = 0;
 	u8 *tlv_data;
-	u32 roam_reason = 0, chan_utilisation = 0, candidate_ch_util = 0, current_ch_util = 0;
+	u32 roam_reason = 0, chan_utilisation = 0;
 	u32 btm_request_mode = 0, btm_response = 0, eapol_msg_type = 0;
 	u32 deauth_reason = 0, eapol_retry_count = 0, status_code = 0;
 	u16 vendor_len, tag_id, tag_len, vtag_id, eapol_key_type = 0;
 	u32 tag_value, vtag_value, chan_frequency = 0, scan_type = 0;
-	short score_val = 0;
-	short candidate_score = 0, current_score =  0, rssi_thresh = 0;
+	short score_val = 0, rssi_thresh = 0;
 	u32 operating_class = 0, measure_mode = 0, measure_duration = 0, ap_count = 0, candidate_count = 0;
-	u32 nan_role = 0, nan_amr = 0, hop_count = 0, message_type = 0;
-	short roam_rssi_val = 0, roam_result_count = 1, candidate_rssi = 0, current_rssi = 0;
-	u8 mac_addr[6], nan_cluster_id[6], nan_nmi[6], candidate_mac[6], current_mac[6];
-	__le16               *le16_ptr = NULL;
+	u32 message_type = 0, expired_timer_value = 0;
+	short roam_rssi_val = 0, roam_result_count = 1;
+	u8 mac_addr[6];
 	int tlv_buffer__len = fapi_get_datalen(skb), i = 0, channel_val = 0, iter = 0, channel_count = 0, lim = 0;
 	int channel_list[MAX_CHANNEL_COUNT] = {0};
 	char ssid[MAX_SSID_LEN];
 	char *string = NULL;
+	bool multi_param = false;
+	int roam_result_ap_count = 0;
+	struct slsi_logging_ap_info candidate_ap = {0}, current_ap = {0};
 
 	SLSI_MUTEX_LOCK(sdev->logger_mutex);
 	event_id = fapi_get_s16(skb, u.mlme_event_log_ind.event);
@@ -3746,30 +4095,38 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 #ifdef CONFIG_SCSC_WIFILOGGER
 	SCSC_WLOG_FW_EVENT(WLOG_NORMAL, event_id, timestamp, fapi_get_data(skb), fapi_get_datalen(skb));
 #endif
+	switch (event_id) {
+	case WIFI_EVENT_FW_NAN_ROLE_TYPE:
+	case WIFI_EVENT_NAN_AVAILABILITY_UPDATE:
+	case WIFI_EVENT_NAN_ULW_UPDATE:
+	case WIFI_EVENT_NAN_TRAFFIC_UPDATE:
+		slsi_handle_nan_rx_event_log_ind(sdev, dev, skb);
+		goto exit;
+	}
 	while (i + 4 < tlv_buffer__len) {
-		le16_ptr = (__le16 *)&tlv_data[i];
-		tag_id = le16_to_cpu(*le16_ptr);
-		le16_ptr = (__le16 *)&tlv_data[i + 2];
-		tag_len = le16_to_cpu(*le16_ptr);
+		tag_id = le16_to_cpu(*((__le16 *)&tlv_data[i]));
+		tag_len = le16_to_cpu(*((__le16 *)&tlv_data[i + 2]));
 		i += 4;
 		if (i + tag_len > tlv_buffer__len) {
 			SLSI_INFO(sdev, "Incorrect fapi bulk data\n");
-			slsi_kfree_skb(skb);
+			kfree_skb(skb);
 			SLSI_MUTEX_UNLOCK(sdev->logger_mutex);
 			return;
 		}
 		tag_value = slsi_convert_tlv_data_to_value(&tlv_data[i], tag_len);
+		multi_param = false;
 		switch (tag_id) {
 		case SLSI_WIFI_TAG_RSSI:
 			roam_rssi_val = (short)tag_value;
 			if (event_id == WIFI_EVENT_ROAM_SCAN_RESULT) {
-				if (roam_result_count == 2) {
-					candidate_rssi = roam_rssi_val;
-					roam_result_count++;
-				} else {
-					current_rssi = roam_rssi_val;
-					roam_result_count++;
-				}
+				/* Following expected order of parameters in UDI
+				 * (rssi value is parameter 2 in the log)
+				 */
+				if (roam_result_count == 2)
+					candidate_ap.rssi = roam_rssi_val;
+				else
+					current_ap.rssi = roam_rssi_val;
+				roam_result_count++;
 			}
 			break;
 		case SLSI_WIFI_TAG_REASON_CODE:
@@ -3777,20 +4134,17 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 			break;
 		case SLSI_WIFI_TAG_VENDOR_SPECIFIC:
 			vendor_len = tag_len - 2;
-			le16_ptr = (__le16 *)&tlv_data[i];
-			vtag_id = le16_to_cpu(*le16_ptr);
+			vtag_id = le16_to_cpu(*((__le16 *)&tlv_data[i]));
 			vtag_value = slsi_convert_tlv_data_to_value(&tlv_data[i + 2], vendor_len);
 			switch (vtag_id) {
 			case SLSI_WIFI_TAG_VD_CHANNEL_UTILISATION:
 				chan_utilisation = vtag_value;
 				if (event_id == WIFI_EVENT_ROAM_SCAN_RESULT) {
-					if (roam_result_count == 3) {
-						candidate_ch_util = chan_utilisation;
-						roam_result_count++;
-					} else {
-						current_ch_util = chan_utilisation;
-						roam_result_count++;
-					}
+					if (roam_result_count == 3)
+						candidate_ap.ch_util = chan_utilisation;
+					else
+						current_ap.ch_util = chan_utilisation;
+					roam_result_count++;
 				}
 				break;
 			case SLSI_WIFI_TAG_VD_ROAMING_REASON:
@@ -3812,15 +4166,13 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 				scan_type = vtag_value;
 				break;
 			case SLSI_WIFI_TAG_VD_SCORE:
-				score_val = (short) vtag_value;
+				score_val = (short)vtag_value;
 				if (event_id == WIFI_EVENT_ROAM_SCAN_RESULT) {
-					if (roam_result_count == 4) {
-						candidate_score = score_val;
-						roam_result_count++;
-					} else {
-						current_score = score_val;
-						roam_result_count++;
-					}
+					if (roam_result_count == 4)
+						candidate_ap.score = score_val;
+					else
+						current_ap.score = score_val;
+					roam_result_count++;
 				}
 				break;
 			case SLSI_WIFI_TAG_VD_RSSI_THRESHOLD:
@@ -3841,23 +4193,39 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 			case SLSI_WIFI_TAG_VD_CANDIDATE_LIST_COUNT:
 				candidate_count = vtag_value;
 				break;
-			case SLSI_WIFI_TAG_VD_CLUSTER_ID:
-				memcpy(nan_cluster_id, &tlv_data[i], tag_len);
-				break;
-			case SLSI_WIFI_TAG_VD_NAN_ROLE:
-				nan_role = vtag_value;
-				break;
-			case SLSI_WIFI_TAG_VD_NAN_AMR:
-				nan_amr = vtag_value;
-				break;
-			case SLSI_WIFI_TAG_VD_NAN_NMI:
-				memcpy(nan_nmi, &tlv_data[i], tag_len);
-				break;
-			case SLSI_WIFI_TAG_VD_NAN_HOP_COUNT:
-				hop_count = vtag_value;
-				break;
 			case SLSI_WIFI_TAG_VD_MESSAGE_TYPE:
 				message_type = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_EXPIRED_TIMER_VALUE:
+				expired_timer_value = vtag_value;
+				break;
+			case SLSI_WIFI_TAG_VD_ESTIMATED_TP:
+				if (event_id == WIFI_EVENT_ROAM_SCAN_RESULT) {
+					if (roam_result_count == 5)
+						candidate_ap.tp_score = vtag_value;
+					else
+						current_ap.tp_score = vtag_value;
+					roam_result_count++;
+				}
+
+				break;
+			case SLSI_WIFI_TAG_VD_PARAMETER_SET:
+				multi_param = true;
+				if (event_id == WIFI_EVENT_ROAM_SCAN_RESULT) {
+					if (roam_result_ap_count > 0 && (roam_result_ap_count % 2 == 0)) {
+						roam_result_count = 1;
+						SLSI_INFO(sdev, "WIFI_EVENT_ROAM_SCAN_RESULT, Candidate BSSID:%pM, Candidate RSSI:%d, "
+								"Candidate Channel Utilisation:%d, Candidate Score:%d, Candidate TP Score:%d,"
+								"Current BSSID:%pM, Current RSSI:%d,"
+								"Current Channel Utilisation:%d, Current Score:%d, Current TP Score:%d\n",
+							  candidate_ap.mac, candidate_ap.rssi, candidate_ap.ch_util,
+							  candidate_ap.score, candidate_ap.tp_score, current_ap.mac,
+							  current_ap.rssi, current_ap.ch_util, current_ap.score, current_ap.tp_score);
+						memset(&candidate_ap, 0, sizeof(candidate_ap));
+						memset(&current_ap, 0, sizeof(current_ap));
+					}
+					roam_result_ap_count++;
+				}
 				break;
 			}
 			break;
@@ -3868,15 +4236,13 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 			status_code = tag_value;
 			break;
 		case SLSI_WIFI_TAG_BSSID:
-			memcpy(mac_addr, &tlv_data[i], tag_len);
+			SLSI_ETHER_COPY(mac_addr, &tlv_data[i]);
 			if (event_id == WIFI_EVENT_ROAM_SCAN_RESULT) {
-					if (roam_result_count == 1) {
-						memcpy(candidate_mac, mac_addr, tag_len);
-						roam_result_count++;
-					} else {
-						memcpy(current_mac, mac_addr, tag_len);
-						roam_result_count++;
-					}
+				if (roam_result_count == 1)
+					SLSI_ETHER_COPY(candidate_ap.mac, mac_addr);
+				else
+					SLSI_ETHER_COPY(current_ap.mac, mac_addr);
+				roam_result_count++;
 			}
 			break;
 		case SLSI_WIFI_TAG_CHANNEL:
@@ -3887,8 +4253,7 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 			lim = iter + tlv_data[iter + 1] + 2;
 			iter += 7; /* 1byte (id) + 1byte(length) + 3byte (oui) + 2byte */
 			while (iter < lim && lim <= i + tag_len) {
-				le16_ptr = (__le16 *)&tlv_data[iter];
-				channel_val = le16_to_cpu(*le16_ptr);
+				channel_val = le16_to_cpu(*((__le16 *)&tlv_data[i]));
 				channel_list[channel_count] = ieee80211_frequency_to_channel(channel_val / 2);
 				if (channel_list[channel_count] < 1 || channel_list[channel_count] > 196) {
 					SLSI_ERR(sdev, "ERR: Invalid channel received %d\n", channel_list[channel_count]);
@@ -3899,7 +4264,7 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 				iter += 3;
 				channel_count += 1;
 				if (channel_count == MAX_CHANNEL_COUNT) {
-					SLSI_ERR(sdev, "ERR: Channel list recieved >= %d\n", MAX_CHANNEL_COUNT);
+					SLSI_ERR(sdev, "ERR: Channel list received >= %d\n", MAX_CHANNEL_COUNT);
 					break;
 				}
 			}
@@ -3912,7 +4277,10 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 				memcpy(ssid, &tlv_data[i], tag_len);
 			break;
 		}
-		i += tag_len;
+		if (multi_param)
+			i += 2; /* To skip VD_PARAMETER_SET */
+		else
+			i += tag_len;
 	}
 	switch (event_id) {
 	case FAPI_EVENT_WIFI_EVENT_FW_EAPOL_FRAME_TRANSMIT_START:
@@ -3933,15 +4301,19 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 			SLSI_INFO(sdev, "WIFI_EVENT_FW_EAPOL_FRAME_RECEIVED, Received 4way-H/S, M%d\n", eapol_msg_type);
 		break;
 	case WIFI_EVENT_FW_BTM_FRAME_REQUEST:
-		SLSI_INFO(sdev, "WIFI_EVENT_FW_BTM_FRAME_REQUEST,Request Mode:%d\n", btm_request_mode);
+		string = slsi_print_channel_list(channel_list, channel_count);
+		SLSI_INFO(sdev, "WIFI_EVENT_FW_BTM_FRAME_REQUEST,Request Mode:%d, Candidate List Count:%d, "
+			  "Channel List:%s\n", btm_request_mode, candidate_count, string);
+		kfree(string);
 		break;
 	case WIFI_EVENT_FW_BTM_FRAME_RESPONSE:
 		SLSI_INFO(sdev, "WIFI_EVENT_FW_BTM_FRAME_RESPONSE,Status code:%d\n", btm_response);
 		break;
 	case FAPI_EVENT_WIFI_EVENT_ROAM_SEARCH_STARTED:
 		SLSI_INFO(sdev, "WIFI_EVENT_ROAM_SEARCH_STARTED, RSSI:%d, Deauth Reason:0x%04x, "
-			  "RSSI Threshold:%d,Channel Utilisation:%d,Roam Reason: %s\n", roam_rssi_val, deauth_reason,
-			  rssi_thresh, chan_utilisation, slsi_get_roam_reason_str(roam_reason));
+			  "RSSI Threshold:%d,Channel Utilisation:%d,Roam Reason: %s Expired Timer Value: %d\n",
+			  roam_rssi_val, deauth_reason, rssi_thresh, chan_utilisation,
+			  slsi_get_roam_reason_str(roam_reason), expired_timer_value);
 		break;
 	case FAPI_EVENT_WIFI_EVENT_FW_AUTH_STARTED:
 		SLSI_INFO(sdev, "WIFI_EVENT_FW_AUTH_STARTED, BSSID:%pM\n", mac_addr);
@@ -3960,6 +4332,12 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 		break;
 	case FAPI_EVENT_WIFI_EVENT_ROAM_AUTH_STARTED:
 		SLSI_INFO(sdev, "WIFI_EVENT_ROAM_AUTH_STARTED, BSSID:%pM, Frequency:%d\n", mac_addr, chan_frequency/2);
+		break;
+	case WIFI_EVENT_FW_NR_FRAME_RESPONSE:
+		string = slsi_print_channel_list(channel_list, channel_count);
+		SLSI_INFO(sdev, "WIFI_EVENT_FW_NR_FRAME_RESPONSE, Candidate List Count:%d, Channel List:%s\n",
+			  candidate_count, string);
+		kfree(string);
 		break;
 	case FAPI_EVENT_WIFI_EVENT_ROAM_AUTH_COMPLETE:
 		SLSI_INFO(sdev, "WIFI_EVENT_ROAM_AUTH_COMPLETE, BSSID:%pM, Result:%d\n", mac_addr, status_code);
@@ -3980,10 +4358,16 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 		kfree(string);
 		break;
 	case WIFI_EVENT_ROAM_SCAN_RESULT:
-		SLSI_INFO(sdev, "WIFI_EVENT_ROAM_SCAN_RESULT, Candidate BSSID:%pM, Candidate RSSI:%d, "
-			"Candidate Channel Utilisation:%d, Candidate Score:%d, Current BSSID:%pM, Current RSSI:%d, "
-			"Current Channel Utilisation:%d, Current Score:%d\n", candidate_mac, candidate_rssi, candidate_ch_util,
-			candidate_score, current_mac, current_rssi, current_ch_util, current_score);
+		if (roam_result_ap_count > 0)
+			SLSI_INFO(sdev, "WIFI_EVENT_ROAM_SCAN_RESULT, Candidate BSSID:%pM, Candidate RSSI:%d, "
+					"Candidate Channel Utilisation:%d, Candidate Score:%d, Candidate TP Score:%d, Current BSSID:%pM, Current RSSI:%d, "
+					"Current Channel Utilisation:%d, Current Score:%d, Current TP Score:%d\n", candidate_ap.mac, candidate_ap.rssi, candidate_ap.ch_util,
+					  candidate_ap.score, candidate_ap.tp_score, current_ap.mac, current_ap.rssi, current_ap.ch_util, current_ap.score, current_ap.tp_score);
+		else
+			SLSI_INFO(sdev, "WIFI_EVENT_ROAM_SCAN_RESULT, Candidate BSSID:%pM, Candidate RSSI:%d, "
+					"Candidate Channel Utilisation:%d, Candidate Score:%d, Current BSSID:%pM, Current RSSI:%d, "
+					"Current Channel Utilisation:%d, Current Score:%d\n", candidate_ap.mac, candidate_ap.rssi, candidate_ap.ch_util,
+					  candidate_ap.score, current_ap.mac, current_ap.rssi, current_ap.ch_util, current_ap.score);
 		break;
 	case WIFI_EVENT_ROAM_RSSI_THRESHOLD:
 		SLSI_INFO(sdev, "WIFI_EVENT_ROAM_RSSI_THRESHOLD, RSSI Threshold:%d\n", rssi_thresh);
@@ -3996,17 +4380,14 @@ void slsi_rx_event_log_indication(struct slsi_dev *sdev, struct net_device *dev,
 		SLSI_INFO(sdev, "WIFI_EVENT_FW_FTM_RANGE_REQUEST, Min Ap Count:%d, Candidate List Count:%d\n",
 			ap_count, candidate_count);
 		break;
-	case WIFI_EVENT_FW_NAN_ROLE_TYPE:
-		SLSI_INFO(sdev, "WIFI_EVENT_FW_NAN_ROLE_TYPE, Cluster Id:%pM, NAN Role:%s, AMR:%d, NMI:%pM, Hop Count:%d\n",
-			nan_cluster_id, slsi_get_nan_role_str(nan_role), nan_amr, nan_nmi, hop_count);
-		break;
 	case WIFI_EVENT_FW_FRAME_TRANSMIT_FAILURE:
 		SLSI_INFO(sdev, "WIFI_EVENT_FW_FRAME_TRANSMIT_FAILURE, Message Type:%s, Result:%d, Retry Count:%d\n",
 			slsi_frame_transmit_failure_message_type(message_type), status_code, eapol_retry_count);
 		break;
 	}
 
-	slsi_kfree_skb(skb);
+exit:
+	kfree_skb(skb);
 	SLSI_MUTEX_UNLOCK(sdev->logger_mutex);
 }
 
@@ -4032,7 +4413,7 @@ static void slsi_on_ring_buffer_data(char *ring_name, char *buffer, int buffer_s
 	if (nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_RING_STATUS, sizeof(*buffer_status), buffer_status) ||
 	    nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_RING_DATA, buffer_size, buffer)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		return;
 	}
 	cfg80211_vendor_event(skb, GFP_KERNEL);
@@ -4059,7 +4440,7 @@ static void slsi_on_alert(char *buffer, int buffer_size, int err_code, void *ctx
 	if (nla_put_u32(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_FW_DUMP_LEN, buffer_size) ||
 	    nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_RING_DATA, buffer_size, buffer)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		goto exit;
 	}
 	cfg80211_vendor_event(skb, GFP_KERNEL);
@@ -4261,7 +4642,7 @@ static int slsi_trigger_fw_mem_dump(struct wiphy *wiphy, struct wireless_dev *wd
 
 	if (nla_put_u32(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_FW_DUMP_LEN, mem_dump_buffer_size)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -4289,6 +4670,9 @@ static int slsi_get_fw_mem_dump(struct wiphy *wiphy, struct wireless_dev *wdev, 
 	u64 val = 0;
 
 	SLSI_DBG3(sdev, SLSI_GSCAN, "\n");
+	if (!data)
+		return -EINVAL;
+
 	SLSI_MUTEX_LOCK(sdev->logger_mutex);
 	nla_for_each_attr(attr, data, len, temp) {
 		type = nla_type(attr);
@@ -4332,7 +4716,7 @@ static int slsi_get_fw_mem_dump(struct wiphy *wiphy, struct wireless_dev *wdev, 
 		/* Indicate the memdump is successfully copied */
 		if (nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_FW_DUMP_DATA, sizeof(ret), &ret)) {
 			SLSI_ERR_NODEV("Failed nla_put\n");
-			slsi_kfree_skb(skb);
+			kfree_skb(skb);
 			ret = -EINVAL;
 			goto exit;
 		}
@@ -4376,7 +4760,7 @@ static int slsi_trigger_driver_mem_dump(struct wiphy *wiphy, struct wireless_dev
 
 	if (nla_put_u32(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_DRIVER_DUMP_LEN, mem_dump_buffer_size)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -4447,7 +4831,7 @@ static int slsi_get_driver_mem_dump(struct wiphy *wiphy, struct wireless_dev *wd
 		/* Indicate the memdump is successfully copied */
 		if (nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_DRIVER_DUMP_DATA, sizeof(ret), &ret)) {
 			SLSI_ERR_NODEV("Failed nla_put\n");
-			slsi_kfree_skb(skb);
+			kfree_skb(skb);
 			ret = -EINVAL;
 			goto exit;
 		}
@@ -4544,7 +4928,7 @@ static int slsi_get_ring_buffers_status(struct wiphy *wiphy, struct wireless_dev
 	if (nla_put_u8(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_RING_NUM, num_rings) ||
 	    nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_RING_STATUS, sizeof(status[0]) * num_rings, status)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -4726,7 +5110,7 @@ static int slsi_get_tx_pkt_fates(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	if (nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_PKT_FATE_NUM, sizeof(provided_count), &provided_count)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -4799,7 +5183,7 @@ static int slsi_get_rx_pkt_fates(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	if (nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_PKT_FATE_NUM, sizeof(provided_count), &provided_count)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret  = -EINVAL;
 		goto exit;
 	}
@@ -4866,28 +5250,28 @@ static int slsi_get_wake_reason_stats(struct wiphy *wiphy, struct wireless_dev *
 	if (nla_put_u32(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_WAKE_STATS_TOTAL_CMD_EVENT_WAKE,
 			wake_reason_count.total_cmd_event_wake)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret  = -EINVAL;
 		goto exit;
 	}
 	if (nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_WAKE_STATS_CMD_EVENT_WAKE_CNT_PTR, 0,
 		    wake_reason_count.cmd_event_wake_cnt)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret  = -EINVAL;
 		goto exit;
 	}
 	if (nla_put_u32(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_WAKE_STATS_TOTAL_DRIVER_FW_LOCAL_WAKE,
 			wake_reason_count.total_driver_fw_local_wake)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret  = -EINVAL;
 		goto exit;
 	}
 	if (nla_put(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_WAKE_STATS_DRIVER_FW_LOCAL_WAKE_CNT_PTR, 0,
 		    wake_reason_count.driver_fw_local_wake_cnt)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret  = -EINVAL;
 		goto exit;
 	}
@@ -4916,7 +5300,7 @@ static int slsi_get_wake_reason_stats(struct wiphy *wiphy, struct wireless_dev *
 	    nla_put_u32(skb, SLSI_ENHANCED_LOGGING_ATTRIBUTE_WAKE_STATS_OTHER_RX_MULTICAST_CNT,
 			wake_reason_count.rx_multicast_wake_pkt_info.other_rx_multicast_addr_cnt)) {
 		SLSI_ERR_NODEV("Failed nla_put\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		ret  = -EINVAL;
 		goto exit;
 	}
@@ -5188,7 +5572,8 @@ static const struct  nl80211_vendor_cmd_info slsi_vendor_events[] = {
 	{ OUI_GOOGLE,  SLSI_NL80211_NAN_TRANSMIT_FOLLOWUP_STATUS},
 	{ OUI_GOOGLE,  SLSI_NAN_EVENT_NDP_REQ},
 	{ OUI_GOOGLE,  SLSI_NAN_EVENT_NDP_CFM},
-	{ OUI_GOOGLE,  SLSI_NAN_EVENT_NDP_END}
+	{ OUI_GOOGLE,  SLSI_NAN_EVENT_NDP_END},
+	{ OUI_SAMSUNG, SLSI_NL80211_VENDOR_RCL_CHANNEL_LIST_EVENT}
 };
 
 static const struct wiphy_vendor_command     slsi_vendor_cmd[] = {

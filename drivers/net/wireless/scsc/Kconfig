@@ -31,12 +31,6 @@ config SCSC_WLAN_SG
 	---help---
 	  This option enables scatter-gather and GSO feature
 
-config SCSC_WLAN_SKB_TRACKING
-	bool "Enable debug memory tracking of skb data in the driver"
-	---help---
-	  This option enables tracking of all skb data in the driver..
-	  This will affect the performance!
-
 config SCSC_WLAN_RX_NAPI
 	bool "Enable use of net device napi rx polling api"
 	default y
@@ -49,6 +43,13 @@ config SCSC_WLAN_RX_NAPI_GRO
 	default y
 	---help---
 	  This option enables the drivers use of the napi Generic Receive Offload
+
+config SCSC_WLAN_RX_NAPI_CPU_AFFINITY
+	bool "Enable CPU affinity for NAPI and RPS"
+	depends on SCSC_WLAN_RX_NAPI
+	default y
+	---help---
+	  This option enables the drivers to select CPUs for NAPI and RPS
 
 config SCSC_WLAN_ANDROID
 	bool "Android specific support"
@@ -176,18 +177,18 @@ config SCSC_WLAN_SINGLE_ANTENNA
 	  This option tells if there is support for single
 	  antenna or dual antenna.
 
+config SCSC_AP_INTERFACE_NAME
+        string "AP net device interface name"
+        default "wlan1"
+        ---help---
+          AP net device interface name.
+
 config SCSC_WLAN_ACS_ENABLE
         bool "ACS Support"
         default y
         ---help---
           This option tells if automatic channel selection is
 	  supported or not.
-
-config SCSC_AP_INTERFACE_NAME
-        string "AP net device interface name"
-        default "wlan1"
-        ---help---
-          AP net device interface name.
 
 config SCSC_WLAN_MHS_STATIC_INTERFACE
         bool "Static AP Interface Support"
@@ -275,3 +276,39 @@ config SCSC_WLAN_MAX_LINK_SPEED
         ---help---
         This option tells if max linkspeed calculation is enabled or not.
 
+config SCSC_WLAN_ARP_FLOW_CONTROL
+        bool "Enable ARP flow control between Host and FW"
+        default y
+        ---help---
+        This option tells if ARP flow control between Host and FW is enabled or not.
+
+config SCSC_WLAN_AP_AUTO_RECOVERY
+        bool "Enable auto recovery for AP mode."
+        default n
+        ---help---
+        This option tells if auto recovery in AP mode is enabled or not.
+
+config SCSC_WLAN_DYNAMIC_ITO
+        bool "Enable dynamic ito"
+        default n
+        ---help---
+        This option tells if dynamic ito feature is supported or not.
+
+config SCSC_WLAN_MAC_ACL_PER_MAC
+        bool "Enable handling of MAC ACL list, received as multiple requests"
+        default n
+        ---help---
+        This option tells if Driver handles MAC ACL list, received as multiple requests.
+
+config SCSC_WLAN_ENHANCED_BIGDATA
+        bool "Send SCSC panic records on HANGED_EVENT"
+        default n
+        ---help---
+        Enable this option to send panic records when HANGED_EVENT
+        is issued by the driver on FW panic.
+
+config SCSC_WLAN_HE
+        bool "Enable HE Capability in Driver"
+        default n
+        ---help---
+        Enable HE Capability in Driver.

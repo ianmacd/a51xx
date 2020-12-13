@@ -781,6 +781,12 @@ static int _decon_disable(struct decon_device *decon, enum decon_state state)
 		decon->eint_status = 0;
 	}
 
+	if (decon->dt.out_type == DECON_OUT_DSI && decon->dt.psr_mode == DECON_VIDEO_MODE) { 
+		struct dsim_device *dsim; 
+		dsim = v4l2_get_subdevdata(decon->out_sd[0]); 
+		call_panel_ops(dsim, suspend, dsim); 
+	} 
+
 	ret = decon_reg_stop(decon->id, decon->dt.out_idx[0], &psr, true,
 			decon->lcd_info->fps);
 	if (ret < 0)

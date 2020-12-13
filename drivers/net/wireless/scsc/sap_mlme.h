@@ -35,5 +35,6 @@ void slsi_rx_reassoc_ind(struct slsi_dev *sdev, struct net_device *dev, struct s
 void slsi_tdls_peer_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb);
 void slsi_rx_listen_end_ind(struct net_device *dev, struct sk_buff *skb);
 void slsi_rx_blockack_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb);
+void slsi_rx_rcl_channel_list_ind(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb);
 
 #endif

@@ -33,9 +33,12 @@
 #endif
 #if defined(CONFIG_BATTERY_SAMSUNG_V2)
 #include "../../battery_v2/include/sec_charging_common.h"
+#elif defined(CONFIG_BATTERY_SAMSUNG_LEGO_STYLE)
+#include "../../battery/common/include/sec_charging_common.h"
 #else
 #include <linux/battery/sec_charging_common.h>
 #endif
+
 #include "usb_notifier.h"
 
 #include <linux/regulator/consumer.h>
@@ -595,7 +598,7 @@ static int set_online(int event, int state)
 {
 	union power_supply_propval val;
 	struct device_node *np_charger = NULL;
-	char *charger_name;
+	char *charger_name = NULL;
 
 	if (event == NOTIFY_EVENT_SMTD_EXT_CURRENT)
 		pr_info("request smartdock charging current = %s\n",
@@ -666,12 +669,12 @@ static int exynos_set_peripheral(bool enable)
 	return 0;
 }
 
-#if defined(CONFIG_BATTERY_SAMSUNG_V2)
+#if defined(CONFIG_BATTERY_SAMSUNG_V2) || defined(CONFIG_BATTERY_SAMSUNG_LEGO_STYLE)
 static int usb_set_chg_current(int state)
 {
 	union power_supply_propval val;
 	struct device_node *np_charger = NULL;
-	char *charger_name;
+	char *charger_name = NULL;
 
 	np_charger = of_find_node_by_name(NULL, "battery");
 	if (!np_charger) {
@@ -728,7 +731,7 @@ static struct otg_notify dwc_lsi_notify = {
 	.device_check_sec = 3,
 	.set_battcall = set_online,
 	.set_ldo_onoff = usb_regulator_onoff,
-#if defined(CONFIG_BATTERY_SAMSUNG_V2)
+#if defined(CONFIG_BATTERY_SAMSUNG_V2) || defined(CONFIG_BATTERY_SAMSUNG_LEGO_STYLE)
 	.set_chg_current = usb_set_chg_current,
 #endif
 	.pre_peri_delay_us = 6,
