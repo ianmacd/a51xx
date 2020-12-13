@@ -274,6 +274,7 @@ static int hx83102e_init(struct lcd_info *lcd)
 	DSI_WRITE(SEQ_SET_E9_OTP_SETTING, ARRAY_SIZE(SEQ_SET_E9_OTP_SETTING));
 	DSI_WRITE(SEQ_SET_BB_OTP_SETTING, ARRAY_SIZE(SEQ_SET_BB_OTP_SETTING));
 	DSI_WRITE(SEQ_SET_E9_OTP_SETTING2, ARRAY_SIZE(SEQ_SET_E9_OTP_SETTING2));
+	DSI_WRITE(SEQ_SET_BA_REGISTER, ARRAY_SIZE(SEQ_SET_BA_REGISTER));
 	DSI_WRITE(SEQ_HX83102E_BL, ARRAY_SIZE(SEQ_HX83102E_BL));
 	DSI_WRITE(SEQ_HX83102E_BLON, ARRAY_SIZE(SEQ_HX83102E_BLON));
 	DSI_WRITE(SEQ_HX83102E_BL_PWM_PREQ, ARRAY_SIZE(SEQ_HX83102E_BL_PWM_PREQ));
@@ -329,12 +330,28 @@ static int hx83102e_init(struct lcd_info *lcd)
 	return ret;
 }
 
+static int hx83102e_power_disable(struct lcd_info *lcd)
+{
+	int ret = 0;
+	struct dsim_device *dsim = get_dsim_drvdata(0);
+
+	dev_info(&lcd->ld->dev, "%s\n", __func__);
+	run_list(dsim->dev, "dsim_set_panel_power_disable_notaot");
+
+	return ret;
+}
+
+
 static int fb_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data)
 {
 	struct fb_event *evdata = data;
 	struct lcd_info *lcd = NULL;
 	int fb_blank;
+
+#if defined(CONFIG_SEC_AOT)
+	struct decon_device *decon = get_decon_drvdata(0);
+#endif
 
 	switch (event) {
 	case FB_EVENT_BLANK:
@@ -359,7 +376,14 @@ static int fb_notifier_callback(struct notifier_block *self,
 
 		msleep(30);	/* > 20ms */
 		dsim_panel_set_brightness(lcd, 1);
-	}
+	} else if (fb_blank == FB_BLANK_POWERDOWN) {
+#if defined(CONFIG_SEC_AOT)
+		if (decon_is_enter_shutdown(decon) || !aot_enabled)
+			hx83102e_power_disable(lcd);
+#else
+		hx83102e_power_disable(lcd);
+#endif
+		}
 
 	return NOTIFY_DONE;
 }
@@ -386,6 +410,23 @@ static int hx83102e_probe(struct lcd_info *lcd)
 	dev_info(&lcd->ld->dev, "- %s\n", __func__);
 
 	return 0;
+}
+
+static void hx83102e_update_dphy_timing(u32 hs_clk, struct dphy_timing_value *t)
+{
+	int val;
+
+	val  = (dphy_timing[0][0] - hs_clk) / 10;
+
+	dphy_timing[val][1] = t->clk_prepare;
+	dphy_timing[val][2] = t->clk_zero;
+	dphy_timing[val][3] = t->clk_post;
+	dphy_timing[val][4] = t->clk_trail;
+	dphy_timing[val][5] = t->hs_prepare;
+	dphy_timing[val][6] = t->hs_zero;
+	dphy_timing[val][7] = t->hs_trail;
+	dphy_timing[val][8] = t->lpx;
+	dphy_timing[val][9] = t->hs_exit;
 }
 
 static ssize_t lcd_type_show(struct device *dev,
@@ -517,6 +558,7 @@ static int dsim_panel_probe(struct dsim_device *dsim)
 {
 	int ret = 0;
 	struct lcd_info *lcd;
+	struct dphy_timing_value t = {0, };
 
 	dsim->priv.par = lcd = kzalloc(sizeof(struct lcd_info), GFP_KERNEL);
 	if (!lcd) {
@@ -546,6 +588,19 @@ static int dsim_panel_probe(struct dsim_device *dsim)
 	if (ret < 0)
 		dev_info(&lcd->ld->dev, "%s: failed to probe panel\n", __func__);
 
+	/* custom dphy timing for hs_clk 1030 MHz*/
+	t.clk_prepare = 10;
+	t.clk_zero = 16;
+	t.clk_post = 7;
+	t.clk_trail = 6;
+	t.hs_prepare = 9;
+	t.hs_zero = 6;
+	t.hs_trail = 10;
+	t.lpx = 6;
+	t.hs_exit = 6;
+
+	hx83102e_update_dphy_timing(dsim->clks.hs_clk, &t);
+
 	lcd_init_sysfs(lcd);
 	dev_info(&lcd->ld->dev, "%s: %s: done\n", kbasename(__FILE__), __func__);
 probe_err:
@@ -557,6 +612,9 @@ static int dsim_panel_displayon(struct dsim_device *dsim)
 	struct lcd_info *lcd = dsim->priv.par;
 
 	dev_info(&lcd->ld->dev, "+ %s: %d\n", __func__, lcd->state);
+
+	dsim_write(dsim->id, DSIM_PHYCTRL_M3, 0x50400);
+	usleep_range(1000, 2000); /* > 1ms */
 
 	if (lcd->state == PANEL_STATE_SUSPENED)
 		hx83102e_init(lcd);
@@ -640,7 +698,6 @@ static irqreturn_t panel_conn_det_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-#if defined(CONFIG_SEC_FACTORY)
 static ssize_t conn_det_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
@@ -688,7 +745,6 @@ static ssize_t conn_det_store(struct device *dev,
 }
 
 static DEVICE_ATTR(conn_det, 0644, conn_det_show, conn_det_store);
-#endif
 
 static void panel_conn_register(struct lcd_info *lcd)
 {
@@ -718,11 +774,6 @@ static void panel_conn_register(struct lcd_info *lcd)
 		return;
 	}
 
-#if defined(CONFIG_SEC_FACTORY)
-	decon_abd_con_register(decon);
-	device_create_file(&lcd->ld->dev, &dev_attr_conn_det);
-#endif
-
 	INIT_WORK(&lcd->conn_work, panel_conn_work);
 
 	lcd->conn_workqueue = create_singlethread_workqueue("lcd_conn_workqueue");
@@ -732,6 +783,12 @@ static void panel_conn_register(struct lcd_info *lcd)
 	}
 
 	decon_abd_pin_register_handler(abd, gpio_to_irq(gpio), panel_conn_det_handler, lcd);
+
+	if (!IS_ENABLED(CONFIG_SEC_FACTORY))
+		return;
+
+	decon_abd_con_register(abd);
+	device_create_file(&lcd->ld->dev, &dev_attr_conn_det);
 }
 
 static int match_dev_name(struct device *dev, void *data)

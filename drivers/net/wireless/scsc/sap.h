@@ -29,7 +29,7 @@ struct sap_api {
 	u16 sap_versions[SAP_MAX_VER];
 	int (*sap_version_supported)(u16 version);
 	int (*sap_handler)(struct slsi_dev *sdev, struct sk_buff *skb);
-	int (*sap_txdone)(struct slsi_dev *sdev, u16 colour);
+	int (*sap_txdone)(struct slsi_dev *sdev, u8 vif, u8 peer_index, u8 ac);
 	int (*sap_notifier)(struct slsi_dev *sdev, unsigned long event);
 };
 #endif

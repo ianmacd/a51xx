@@ -15,7 +15,11 @@
 #include "hip4_sampler.h"
 #include "traffic_monitor.h"
 
-#ifdef CONFIG_ANDROID
+#ifdef CONFIG_SCSC_LOG_COLLECTION
+#include <scsc/scsc_log_collector.h>
+#endif
+
+#ifdef CONFIG_SCSC_WLAN_ANDROID
 #include "scsc_wifilogger_rings.h"
 #endif
 
@@ -23,7 +27,7 @@
 
 static int sap_ma_version_supported(u16 version);
 static int sap_ma_rx_handler(struct slsi_dev *sdev, struct sk_buff *skb);
-static int sap_ma_txdone(struct slsi_dev *sdev, u16 colour);
+static int sap_ma_txdone(struct slsi_dev *sdev,  u8 vif, u8 peer_index, u8 ac);
 static int sap_ma_notifier(struct slsi_dev *sdev, unsigned long event);
 
 static struct sap_api sap_ma = {
@@ -95,6 +99,29 @@ static int sap_ma_version_supported(u16 version)
 	return -EINVAL;
 }
 
+static void slsi_rx_check_mc_addr_regd(struct slsi_dev *sdev, struct net_device *dev, struct ethhdr *ehdr)
+{
+	int i;
+	struct netdev_vif *ndev_vif = netdev_priv(dev);
+
+	slsi_spinlock_lock(&ndev_vif->sta.regd_mc_addr_lock);
+
+	for (i = 0 ; i < ndev_vif->sta.regd_mc_addr_count; i++)
+		if (memcmp(ehdr->h_dest, ndev_vif->sta.regd_mc_addr[i], ETH_ALEN) == 0) {
+			SLSI_INFO(sdev, "Wakeup by regd mc addr %pM\n", ndev_vif->sta.regd_mc_addr[i]);
+			slsi_spinlock_unlock(&ndev_vif->sta.regd_mc_addr_lock);
+			return;
+		}
+
+	SLSI_ERR(sdev, "Wakeup by unregistered mc address\n");
+	SLSI_INFO(sdev, "Received packet source : %pM, dest : %pM\n", ehdr->h_source, ehdr->h_dest);
+	SLSI_INFO(sdev, "Regd mc addr : \n");
+	for (i = 0 ; i < ndev_vif->sta.regd_mc_addr_count; i++)
+		SLSI_INFO(sdev, "    %pM\n", ndev_vif->sta.regd_mc_addr[i]);
+
+	slsi_spinlock_unlock(&ndev_vif->sta.regd_mc_addr_lock);
+}
+
 static int slsi_rx_amsdu_deaggregate(struct net_device *dev, struct sk_buff *skb, struct sk_buff_head *msdu_list)
 {
 	unsigned int msdu_len;
@@ -106,6 +133,13 @@ static int slsi_rx_amsdu_deaggregate(struct net_device *dev, struct sk_buff *skb
 	bool skip_frame = false;
 	struct ethhdr *mh;
 
+#ifdef CONFIG_SCSC_LOG_COLLECTION
+	/* Rate limit for debug of incorrectly formatted A-MSDU frame
+	 * not more than 1 Sable every 30 seconds
+	 */
+	static DEFINE_RATELIMIT_STATE(_rs, 30*HZ, 1);
+#endif
+
 	SLSI_NET_DBG4(dev, SLSI_RX, "A-MSDU received (len:%d)\n", skb->len);
 
 	while (!last_sub_frame) {
@@ -115,7 +149,11 @@ static int slsi_rx_amsdu_deaggregate(struct net_device *dev, struct sk_buff *skb
 		if (!msdu_len || msdu_len >= skb->len) {
 			SLSI_NET_ERR(dev, "invalid MSDU length %d, SKB length = %d\n", msdu_len, skb->len);
 			__skb_queue_purge(msdu_list);
-			slsi_kfree_skb(skb);
+			kfree_skb(skb);
+#ifdef CONFIG_SCSC_LOG_COLLECTION
+			if (__ratelimit(&_rs))
+				scsc_log_collector_schedule_collection(SCSC_LOG_HOST_WLAN, SCSC_LOG_HOST_WLAN_REASON_INVALID_AMSDU);
+#endif
 			return -EINVAL;
 		}
 
@@ -125,18 +163,22 @@ static int slsi_rx_amsdu_deaggregate(struct net_device *dev, struct sk_buff *skb
 		if (subframe_len > skb->len) {
 			SLSI_NET_ERR(dev, "invalid subframe length %d, SKB length = %d\n", subframe_len, skb->len);
 			__skb_queue_purge(msdu_list);
-			slsi_kfree_skb(skb);
+			kfree_skb(skb);
+#ifdef CONFIG_SCSC_LOG_COLLECTION
+			if (__ratelimit(&_rs))
+				scsc_log_collector_schedule_collection(SCSC_LOG_HOST_WLAN, SCSC_LOG_HOST_WLAN_REASON_INVALID_AMSDU);
+#endif
 			return -EINVAL;
 		}
 
 		/* For the last subframe skb length and subframe length will be same */
 		if (skb->len == subframe_len) {
-			subframe = slsi_skb_copy(skb, GFP_ATOMIC);
+			subframe = skb_copy(skb, GFP_ATOMIC);
 
 			if (!subframe) {
 				SLSI_NET_ERR(dev, "failed to alloc the SKB for A-MSDU subframe\n");
 				__skb_queue_purge(msdu_list);
-				slsi_kfree_skb(skb);
+				kfree_skb(skb);
 				return -ENOMEM;
 			}
 
@@ -145,12 +187,12 @@ static int slsi_rx_amsdu_deaggregate(struct net_device *dev, struct sk_buff *skb
 			last_sub_frame = true;
 		} else {
 			/* Copy the skb for the subframe */
-			subframe = slsi_skb_copy(skb, GFP_ATOMIC);
+			subframe = skb_copy(skb, GFP_ATOMIC);
 
 			if (!subframe) {
 				SLSI_NET_ERR(dev, "failed to alloc the SKB for A-MSDU subframe\n");
 				__skb_queue_purge(msdu_list);
-				slsi_kfree_skb(skb);
+				kfree_skb(skb);
 				return -ENOMEM;
 			}
 
@@ -189,7 +231,11 @@ static int slsi_rx_amsdu_deaggregate(struct net_device *dev, struct sk_buff *skb
 			if (!skb_pull(skb, (subframe_len + padding))) {
 				SLSI_NET_ERR(dev, "Invalid subframe + padding length=%d, SKB length=%d\n", subframe_len + padding, skb->len);
 				__skb_queue_purge(msdu_list);
-				slsi_kfree_skb(skb);
+				kfree_skb(skb);
+#ifdef CONFIG_SCSC_LOG_COLLECTION
+				if (__ratelimit(&_rs))
+					scsc_log_collector_schedule_collection(SCSC_LOG_HOST_WLAN, SCSC_LOG_HOST_WLAN_REASON_INVALID_AMSDU);
+#endif
 				return -EINVAL;
 			}
 		}
@@ -199,7 +245,7 @@ static int slsi_rx_amsdu_deaggregate(struct net_device *dev, struct sk_buff *skb
 			skip_frame = false;
 			/* Free the the skbuff structure itself but not the data */
 			/* skb will be freed if it is the last subframe (i.e. subframe == skb) */
-			slsi_kfree_skb(subframe);
+			kfree_skb(subframe);
 			continue;
 		}
 		__skb_queue_tail(msdu_list, subframe);
@@ -213,7 +259,7 @@ static inline bool slsi_rx_is_amsdu(struct sk_buff *skb)
 	return (fapi_get_u16(skb, u.ma_unitdata_ind.data_unit_descriptor) == FAPI_DATAUNITDESCRIPTOR_AMSDU);
 }
 
-void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb, bool from_ba_timer)
+void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, struct sk_buff *skb, bool ctx_napi)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct sk_buff_head msdu_list;
@@ -221,9 +267,6 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 	struct ethhdr *eth_hdr;
 	bool is_amsdu = slsi_rx_is_amsdu(skb);
 	u8 trafic_q = slsi_frame_priority_to_ac_queue(fapi_get_u16(skb, u.ma_unitdata_ind.priority));
-#ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	u32 conf_hip4_ver = 0;
-#endif
 
 	__skb_queue_head_init(&msdu_list);
 
@@ -248,7 +291,7 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 	peer = slsi_get_peer_from_mac(sdev, dev, eth_hdr->h_source);
 	if (!peer) {
 		SLSI_NET_WARN(dev, "Packet dropped (no peer records)\n");
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		return;
 	}
 
@@ -281,11 +324,16 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 		if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
 			struct ethhdr *ehdr = (struct ethhdr *)(rx_skb->data);
 
-			if (is_multicast_ether_addr(ehdr->h_dest) &&
-				!compare_ether_addr(ehdr->h_source, dev->dev_addr)) {
-				SLSI_NET_DBG2(dev, SLSI_RX, "drop locally generated multicast frame relayed back by AP\n");
-				consume_skb(rx_skb);
-				continue;
+			if (is_multicast_ether_addr(ehdr->h_dest)) {
+				/* Check multicast address is registered if host wakeup by multicast */
+				if (unlikely(slsi_skb_cb_get(rx_skb)->wakeup))
+					slsi_rx_check_mc_addr_regd(sdev, dev, ehdr);
+
+				if (!compare_ether_addr(ehdr->h_source, dev->dev_addr)) {
+					SLSI_NET_DBG2(dev, SLSI_RX, "drop locally generated multicast frame relayed back by AP\n");
+					consume_skb(rx_skb);
+					continue;
+				}
 			}
 		}
 
@@ -296,9 +344,9 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 
 			if (is_multicast_ether_addr(ehdr->h_dest)) {
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-				struct sk_buff *rebroadcast_skb = slsi_skb_copy(rx_skb, GFP_ATOMIC);
+				struct sk_buff *rebroadcast_skb = skb_copy(rx_skb, GFP_ATOMIC);
 #else
-				struct sk_buff *rebroadcast_skb = slsi_skb_copy(rx_skb, GFP_KERNEL);
+				struct sk_buff *rebroadcast_skb = skb_copy(rx_skb, GFP_KERNEL);
 #endif
 				if (!rebroadcast_skb) {
 					SLSI_WARN(sdev, "Intra BSS: failed to alloc new SKB for broadcast\n");
@@ -306,7 +354,6 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 					SLSI_DBG3(sdev, SLSI_RX, "Intra BSS: multicast %pM\n", ehdr->h_dest);
 					rebroadcast_skb->dev = dev;
 					rebroadcast_skb->protocol = cpu_to_be16(ETH_P_802_3);
-					slsi_dbg_untrack_skb(rebroadcast_skb);
 					skb_reset_network_header(rebroadcast_skb);
 					skb_reset_mac_header(rebroadcast_skb);
 					dev_queue_xmit(rebroadcast_skb);
@@ -317,7 +364,6 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 					SLSI_DBG3(sdev, SLSI_RX, "Intra BSS: unicast %pM\n", ehdr->h_dest);
 					rx_skb->dev = dev;
 					rx_skb->protocol = cpu_to_be16(ETH_P_802_3);
-					slsi_dbg_untrack_skb(rx_skb);
 					skb_reset_network_header(rx_skb);
 					skb_reset_mac_header(rx_skb);
 					dev_queue_xmit(rx_skb);
@@ -357,9 +403,9 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 							other_ndev_vif->peer_sta_record[j]->valid &&
 						    ether_addr_equal(other_ndev_vif->peer_sta_record[j]->address, ehdr->h_source)) {
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-							struct sk_buff *duplicate_skb = slsi_skb_copy(rx_skb, GFP_ATOMIC);
+							struct sk_buff *duplicate_skb = skb_copy(rx_skb, GFP_ATOMIC);
 #else
-							struct sk_buff *duplicate_skb = slsi_skb_copy(rx_skb, GFP_KERNEL);
+							struct sk_buff *duplicate_skb = skb_copy(rx_skb, GFP_KERNEL);
 #endif
 							SLSI_NET_DBG2(other_dev, SLSI_RX, "NAN: source address match %pM\n", other_ndev_vif->peer_sta_record[j]->address);
 							if (!duplicate_skb) {
@@ -376,7 +422,6 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 							duplicate_skb->ip_summed = CHECKSUM_NONE;
 							duplicate_skb->protocol = eth_type_trans(duplicate_skb, other_dev);
 
-							slsi_dbg_untrack_skb(duplicate_skb);
 							SLSI_NET_DBG4(other_dev, SLSI_RX, "pass %u bytes to local stack\n", duplicate_skb->len);
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
 							netif_receive_skb(duplicate_skb);
@@ -439,27 +484,21 @@ void slsi_rx_data_deliver_skb(struct slsi_dev *sdev, struct net_device *dev, str
 
 		SCSC_HIP4_SAMPLER_TCP_DECODE(sdev, dev, rx_skb->data, true);
 		slsi_traffic_mon_event_rx(sdev, dev, rx_skb);
-		slsi_dbg_untrack_skb(rx_skb);
 
 		SLSI_NET_DBG4(dev, SLSI_RX, "pass %u bytes to local stack\n", rx_skb->len);
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-		conf_hip4_ver = scsc_wifi_get_hip_config_version(&sdev->hip4_inst.hip_control->init);
-		if (conf_hip4_ver == 4) {
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI_GRO
-			if (!from_ba_timer)
-				napi_gro_receive(&sdev->hip4_inst.hip_priv->napi, rx_skb);
-			else
-				netif_receive_skb(rx_skb);
-#else
+		if (ctx_napi)
+			napi_gro_receive(&sdev->hip4_inst.hip_priv->napi, rx_skb);
+		else
 			netif_receive_skb(rx_skb);
+#else /* #ifdef CONFIG_SCSC_WLAN_RX_NAPI_GRO */
+		netif_receive_skb(rx_skb);
 #endif
-		} else {
-			netif_rx_ni(rx_skb);
-		}
-#else
+#else /* #ifdef CONFIG_SCSC_WLAN_RX_NAPI */
 		netif_rx_ni(rx_skb);
 #endif
-		slsi_wakelock_timeout(&sdev->wlan_wl_ma, SLSI_RX_WAKELOCK_TIME);
+		slsi_wake_lock_timeout(&sdev->wlan_wl_ma, msecs_to_jiffies(SLSI_RX_WAKELOCK_TIME));
 	}
 }
 
@@ -474,7 +513,10 @@ static void slsi_rx_data_ind(struct slsi_dev *sdev, struct net_device *dev, stru
 	    (fapi_get_u16(skb, u.ma_unitdata_ind.data_unit_descriptor) == FAPI_DATAUNITDESCRIPTOR_IEEE802_11_FRAME) ||
 	    (fapi_get_u16(skb, u.ma_unitdata_ind.data_unit_descriptor) == FAPI_DATAUNITDESCRIPTOR_AMSDU))) {
 		WARN_ON(1);
-		slsi_kfree_skb(skb);
+#ifdef CONFIG_SCSC_SMAPPER
+		hip4_smapper_free_mapped_skb(skb);
+#endif
+		kfree_skb(skb);
 		return;
 	}
 
@@ -512,7 +554,7 @@ static void slsi_rx_data_ind(struct slsi_dev *sdev, struct net_device *dev, stru
 			eth_hdr = (struct ethhdr *)slsi_hip_get_skb_data_from_smapper(sdev, skb);
 			if (!(eth_hdr)) {
 				SLSI_NET_DBG2(dev, SLSI_RX, "SKB from SMAPPER is NULL\n");
-				slsi_kfree_skb(skb);
+				kfree_skb(skb);
 				return;
 			}
 		} else {
@@ -534,14 +576,28 @@ static void slsi_rx_data_ind(struct slsi_dev *sdev, struct net_device *dev, stru
 	if (!peer) {
 		SLSI_NET_WARN(dev, "Packet dropped (no peer records)\n");
 		/* Race in Data plane (Shows up in fw test mode) */
-		slsi_kfree_skb(skb);
+#ifdef CONFIG_SCSC_SMAPPER
+		hip4_smapper_free_mapped_skb(skb);
+#endif
+		kfree_skb(skb);
 		return;
 	}
 
 	/* discard data frames if received before key negotiations are completed */
 	if (ndev_vif->vif_type == FAPI_VIFTYPE_AP && peer->connected_state != SLSI_STA_CONN_STATE_CONNECTED) {
 		SLSI_NET_WARN(dev, "Packet dropped (peer connection not complete (state:%u))\n", peer->connected_state);
-		slsi_kfree_skb(skb);
+#ifdef CONFIG_SCSC_SMAPPER
+		hip4_smapper_free_mapped_skb(skb);
+#endif
+		kfree_skb(skb);
+		return;
+	}
+
+	/* skip BA reorder if the destination address is Multicast */
+	if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION && (is_multicast_ether_addr(eth_hdr->h_dest))) {
+		/* Skip BA reorder and pass the frames Up */
+		SLSI_NET_DBG2(dev, SLSI_RX, "Multicast/Broadcast packet received in STA mode(seq: %d) skip BA\n", (seq_num & SLSI_RX_SEQ_NUM_MASK));
+		slsi_rx_data_deliver_skb(sdev, dev, skb, false);
 		return;
 	}
 
@@ -564,7 +620,10 @@ static void slsi_rx_data_ind(struct slsi_dev *sdev, struct net_device *dev, stru
 		peer = slsi_get_peer_from_qs(sdev, dev, SLSI_STA_PEER_QUEUESET);
 		if (!peer) {
 			SLSI_NET_WARN(dev, "Packet dropped (AP peer not found)\n");
-			slsi_kfree_skb(skb);
+#ifdef CONFIG_SCSC_SMAPPER
+			hip4_smapper_free_mapped_skb(skb);
+#endif
+			kfree_skb(skb);
 			return;
 		}
 	}
@@ -597,7 +656,7 @@ static int slsi_rx_data_cfm(struct slsi_dev *sdev, struct net_device *dev, struc
 	if (fapi_get_u16(skb, u.ma_unitdata_cfm.transmission_status) == FAPI_TRANSMISSIONSTATUS_RETRY_LIMIT)
 		ndev_vif->tx_no_ack[SLSI_HOST_TAG_TRAFFIC_QUEUE(host_tag)]++;
 
-	slsi_kfree_skb(skb);
+	kfree_skb(skb);
 	return 0;
 }
 
@@ -612,7 +671,7 @@ static int slsi_rx_napi_process(struct slsi_dev *sdev, struct sk_buff *skb)
 
 	rcu_read_lock();
 #ifdef CONFIG_SCSC_WIFI_NAN_ENABLE
-	if (vif >= SLSI_NAN_DATA_IFINDEX_START && fapi_get_sigid(skb) == MA_UNITDATA_IND) {
+	if ((vif >= SLSI_NAN_DATA_IFINDEX_START) && fapi_get_sigid(skb) == MA_UNITDATA_IND) {
 		dev = slsi_nan_get_netdev_rcu(sdev, skb);
 	} else {
 		dev = slsi_get_netdev_rcu(sdev, vif);
@@ -629,27 +688,30 @@ static int slsi_rx_napi_process(struct slsi_dev *sdev, struct sk_buff *skb)
 
 	ndev_vif = netdev_priv(dev);
 
+	slsi_debug_frame(sdev, dev, skb, "RX");
 	switch (fapi_get_u16(skb, id)) {
 	case MA_UNITDATA_IND:
 		slsi_rx_data_ind(sdev, dev, skb);
 
 		/* SKBs in a BA session are not passed yet */
+		slsi_spinlock_lock(&ndev_vif->ba_lock);
 		if (atomic_read(&ndev_vif->ba_flush)) {
 			atomic_set(&ndev_vif->ba_flush, 0);
-			slsi_ba_process_complete(dev, false);
+			slsi_ba_process_complete(dev, true);
 		}
+		slsi_spinlock_unlock(&ndev_vif->ba_lock);
 		break;
 	case MA_UNITDATA_CFM:
 		(void)slsi_rx_data_cfm(sdev, dev, skb);
 		break;
 	default:
 		SLSI_DBG1(sdev, SLSI_RX, "Unexpected Data: 0x%.4x\n", fapi_get_sigid(skb));
-		slsi_kfree_skb(skb);
+		kfree_skb(skb);
 		break;
 	}
 	return 0;
 }
-#endif
+#else
 void slsi_rx_netdev_data_work(struct work_struct *work)
 {
 	struct slsi_skb_work *w = container_of(work, struct slsi_skb_work, work);
@@ -661,12 +723,12 @@ void slsi_rx_netdev_data_work(struct work_struct *work)
 	if (WARN_ON(!dev))
 		return;
 
-	slsi_wakelock(&sdev->wlan_wl);
+	slsi_wake_lock(&sdev->wlan_wl);
 
 	while (1) {
 		SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 		if (!ndev_vif->activated) {
-			slsi_skb_queue_purge(&w->queue);
+			skb_queue_purge(&w->queue);
 			SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 			break;
 		}
@@ -682,6 +744,7 @@ void slsi_rx_netdev_data_work(struct work_struct *work)
 			break;
 		}
 
+		slsi_debug_frame(sdev, dev, skb, "RX");
 		switch (fapi_get_u16(skb, id)) {
 		case MA_UNITDATA_IND:
 #ifdef CONFIG_SCSC_SMAPPER
@@ -703,12 +766,12 @@ void slsi_rx_netdev_data_work(struct work_struct *work)
 			break;
 		default:
 			SLSI_DBG1(sdev, SLSI_RX, "Unexpected Data: 0x%.4x\n", fapi_get_sigid(skb));
-			slsi_kfree_skb(skb);
+			kfree_skb(skb);
 			break;
 		}
 		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 	}
-	slsi_wakeunlock(&sdev->wlan_wl);
+	slsi_wake_unlock(&sdev->wlan_wl);
 }
 
 static int slsi_rx_queue_data(struct slsi_dev *sdev, struct sk_buff *skb)
@@ -743,12 +806,10 @@ static int slsi_rx_queue_data(struct slsi_dev *sdev, struct sk_buff *skb)
 err:
 	return -EINVAL;
 }
+#endif
 
 static int sap_ma_rx_handler(struct slsi_dev *sdev, struct sk_buff *skb)
 {
-#ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	u32 conf_hip4_ver = 0;
-#endif
 #ifdef CONFIG_SCSC_SMAPPER
 	u16 sig_len;
 	u32 err;
@@ -767,21 +828,13 @@ static int sap_ma_rx_handler(struct slsi_dev *sdev, struct sk_buff *skb)
 				return err;
 		}
 #endif
+		/* fall through */
 	case MA_UNITDATA_CFM:
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-		conf_hip4_ver = scsc_wifi_get_hip_config_version(&sdev->hip4_inst.hip_control->init);
-		if (conf_hip4_ver == 4)
-			return slsi_rx_napi_process(sdev, skb);
-		else
-			return slsi_rx_queue_data(sdev, skb);
+		return slsi_rx_napi_process(sdev, skb);
 #else
 		return slsi_rx_queue_data(sdev, skb);
 #endif
-	case MA_BLOCKACK_IND:
-		/* It is anomolous to handle the MA_BLOCKACK_IND in the
-		 * mlme wq.
-		 */
-		return slsi_rx_enqueue_netdev_mlme(sdev, skb, fapi_get_vif(skb));
 	default:
 		break;
 	}
@@ -791,23 +844,10 @@ static int sap_ma_rx_handler(struct slsi_dev *sdev, struct sk_buff *skb)
 }
 
 /* Adjust the scod value and flow control appropriately. */
-static int sap_ma_txdone(struct slsi_dev *sdev, u16 colour)
+static int sap_ma_txdone(struct slsi_dev *sdev,  u8 vif, u8 peer_index, u8 ac)
 {
 	struct net_device *dev;
 	struct slsi_peer *peer;
-	u16 vif, peer_index, ac;
-
-	/* Extract information from the coloured mbulk */
-	/* colour is defined as: */
-	/* u16 register bits:
-	 * 0      - do not use
-	 * [3:1]  - vif
-	 * [7:4]  - peer_index
-	 * [10:8] - ac queue
-	 */
-	vif = (colour & 0xE) >> 1;
-	peer_index = (colour & 0xF0) >> 4;
-	ac = (colour & 0x300) >> 8;
 
 	rcu_read_lock();
 	dev = slsi_get_netdev_rcu(sdev, vif);
@@ -830,7 +870,7 @@ static int sap_ma_txdone(struct slsi_dev *sdev, u16 colour)
 		if (peer)
 			return scsc_wifi_fcq_receive_data(dev, &peer->data_qs, ac, sdev, vif, peer_index);
 
-		SLSI_DBG3(sdev, SLSI_RX, "peer record NOT found for peer_index=%d\n", peer_index);
+		SLSI_DBG1(sdev, SLSI_RX, "peer record NOT found for vif=%d peer_index=%d\n", vif, peer_index);
 		/* We need to handle this case as special. Peer disappeared bug hip4
 		 * is sending back the colours to free.
 		 */

@@ -74,6 +74,6 @@ int slsi_hip_rx(struct slsi_dev *sdev, struct sk_buff *skb);
 /* SAP setup once we receive SAP versions */
 int slsi_hip_sap_setup(struct slsi_dev *sdev);
 /* Allow the SAP to act on a buffer in the free list. */
-int slsi_hip_tx_done(struct slsi_dev *sdev, u16 colour);
+int slsi_hip_tx_done(struct slsi_dev *sdev, u8 vif, u8 peer_index, u8 ac);
 
 #endif

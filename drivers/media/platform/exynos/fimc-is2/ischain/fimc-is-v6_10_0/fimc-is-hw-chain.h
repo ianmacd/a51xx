@@ -115,6 +115,7 @@ enum hwip_interrupt_map {
 #define MCSC_DJAG_IN_CAPTURE_MODE	(DEV_HW_MCSC1)
 #define MCSC_CAC_IN_VIDEO_MODE		(DEV_HW_MCSC0)
 #define MCSC_CAC_IN_CAPTURE_MODE	(DEV_HW_MCSC1)
+#define MCSC_LINE_BUF_SIZE		(5760)
 
 enum mc_scaler_interrupt_map {
 	INTR_MC_SCALER_FRAME_END		= 0,

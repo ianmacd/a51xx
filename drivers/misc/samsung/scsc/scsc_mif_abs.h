@@ -209,6 +209,15 @@ struct scsc_mif_abs {
 	int  (*mif_pm_qos_remove_request)(struct scsc_mif_abs *interface, struct scsc_mifqos_request *qos_req);
 #endif
 	int (*mif_read_register)(struct scsc_mif_abs *interface, u64 id, u32 *val);
+#ifdef CONFIG_SOC_EXYNOS7885
+/**
+* Return scsc_btabox_data structure with physical address & size of the DTB region
+* exposed by the platform driver. The platform driver uses it to configure BAAW1.
+* The BT driver needs to know and pass it down to BT firmware to configure ABOX
+* shared data structure
+*/
+	void (*get_abox_shared_mem)(struct scsc_mif_abs *interface, void **data);
+#endif
 };
 
 struct device;

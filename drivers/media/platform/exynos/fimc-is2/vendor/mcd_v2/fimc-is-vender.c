@@ -337,7 +337,9 @@ int fimc_is_vender_probe(struct fimc_is_vender *vender)
 		specific->rom_data[i].rom_type = ROM_TYPE_NONE;
 		specific->rom_data[i].rom_valid = false;
 		specific->rom_data[i].is_rom_read = false;
-
+#ifdef USE_DIFFERENT_ISP_MODULE
+		specific->rom_data[i].use_different_isp_module = false;
+#endif /* USE_DIFFERENT_ISP_MODULE */
 		specific->rom_cal_map_addr[i] = NULL;
 
 		specific->rom_share[i].check_rom_share = false;
@@ -361,8 +363,8 @@ p_err:
 
 /***
  * parse_sysfs_caminfo:
- *  store caminfo items to cam_infos[] indexed with position property. 
- *  If the property doesn't exist, the camera_num is used as index 
+ *  store caminfo items to cam_infos[] indexed with position property.
+ *  If the property doesn't exist, the camera_num is used as index
  *  for backwards compatiblility.
  */
 static int parse_sysfs_caminfo(struct device_node *np,
@@ -720,11 +722,11 @@ static int fimc_is_ischain_loadcalb_eeprom(struct fimc_is_core *core,
 	int cal_size = 0;
 	int rom_position = position;
 	int rom_cal_map_ver_addr;
-	
+
 	char *cal_ptr;
 	char *cal_buf = NULL;
 	char *loaded_fw_ver = NULL;
-	
+
 	struct fimc_is_rom_info *finfo;
 	struct fimc_is_rom_info *pinfo;
 	struct fimc_is_vender_specific *specific = core->vender.private_data;
@@ -784,7 +786,7 @@ static int fimc_is_ischain_loadcalb_eeprom(struct fimc_is_core *core,
 	} else {
 		if (crc32_check_list[position][CRC32_CHECK_HEADER] == true) {
 			err("Camera[%d]: CRC32 error. But header section is no problem.\n", position);
-			memset((void *)(cal_ptr + 0x1000), 0xFF, cal_size - 0x1000);			
+			memset((void *)(cal_ptr + 0x1000), 0xFF, cal_size - 0x1000);
 		} else {
 			err("Camera[%d] : CRC32 error for all section.\n", position);
 			memset((void *)(cal_ptr), 0xFF, cal_size);
@@ -1248,6 +1250,28 @@ int fimc_is_vender_set_torch(u32 aeflashMode)
 }
 #endif
 
+void fimc_is_vender_csi_err_print_debug_log(struct fimc_is_device_sensor *device)
+{
+	struct fimc_is_module_enum *module = NULL;
+	struct fimc_is_device_sensor_peri *sensor_peri = NULL;
+	struct fimc_is_cis *cis = NULL;
+	int ret = 0;
+
+	if (device && device->pdev) {
+		ret = fimc_is_sensor_g_module(device, &module);
+		if (ret) {
+			warn("%s sensor_g_module failed(%d)", __func__, ret);
+			return;
+		}
+
+		sensor_peri = (struct fimc_is_device_sensor_peri *)module->private_data;
+		if (sensor_peri->subdev_cis) {
+			cis = (struct fimc_is_cis *)v4l2_get_subdevdata(sensor_peri->subdev_cis);
+			CALL_CISOPS(cis, cis_log_status, sensor_peri->subdev_cis);
+		}
+	}
+}
+
 int fimc_is_vender_video_s_ctrl(struct v4l2_control *ctrl,
 	void *device_data)
 {
@@ -1270,21 +1294,33 @@ int fimc_is_vender_video_s_ctrl(struct v4l2_control *ctrl,
 		ctrl->id = VENDER_S_CTRL;
 		value = (unsigned int)ctrl->value;
 		captureIntent = (value >> 16) & 0x0000FFFF;
-		if (captureIntent == AA_CAPTURE_INTENT_STILL_CAPTURE_DEBLUR_DYNAMIC_SHOT
-			|| captureIntent == AA_CAPTURE_INTENT_STILL_CAPTURE_OIS_DYNAMIC_SHOT
-			|| captureIntent == AA_CAPTURE_INTENT_STILL_CAPTURE_EXPOSURE_DYNAMIC_SHOT
-			|| captureIntent == AA_CAPTURE_INTENT_STILL_CAPTURE_MFHDR_DYNAMIC_SHOT
-			|| captureIntent == AA_CAPTURE_INTENT_STILL_CAPTURE_LLHDR_DYNAMIC_SHOT
-			|| captureIntent == AA_CAPTURE_INTENT_STILL_CAPTURE_SUPER_NIGHT_SHOT_HANDHELD
-			|| captureIntent == AA_CAPTURE_INTENT_STILL_CAPTURE_SUPER_NIGHT_SHOT_TRIPOD) {
+		switch (captureIntent) {
+		case AA_CAPTURE_INTENT_STILL_CAPTURE_DEBLUR_DYNAMIC_SHOT:
+		case AA_CAPTURE_INTENT_STILL_CAPTURE_OIS_DYNAMIC_SHOT:
+		case AA_CAPTURE_INTENT_STILL_CAPTURE_EXPOSURE_DYNAMIC_SHOT:
+		case AA_CAPTURE_INTENT_STILL_CAPTURE_MFHDR_DYNAMIC_SHOT:
+		case AA_CAPTURE_INTENT_STILL_CAPTURE_LLHDR_DYNAMIC_SHOT:
+		case AA_CAPTURE_INTENT_STILL_CAPTURE_SUPER_NIGHT_SHOT_HANDHELD:
+		case AA_CAPTURE_INTENT_STILL_CAPTURE_SUPER_NIGHT_SHOT_TRIPOD:
+		case AA_CAPTURE_INTENT_STILL_CAPTURE_CROPPED_REMOSAIC_DYNAMIC_SHOT:
 			captureCount = value & 0x0000FFFF;
-		} else {
+			break;
+		default:
 			captureIntent = ctrl->value;
 			captureCount = 0;
+			break;
 		}
+
 		device->group_3aa.intent_ctl.captureIntent = captureIntent;
 		device->group_3aa.intent_ctl.vendor_captureCount = captureCount;
-		minfo("[VENDER] s_ctrl intent(%d) count(%d)\n", device, captureIntent, captureCount);
+
+		if (captureIntent == AA_CAPTURE_INTENT_STILL_CAPTURE_OIS_MULTI) {
+			device->group_3aa.remainIntentCount = 2 + INTENT_RETRY_CNT;
+		} else {
+			device->group_3aa.remainIntentCount = 0 + INTENT_RETRY_CNT;
+		}
+		minfo("[VENDER] s_ctrl intent(%d) count(%d) remainIntentCount(%d)\n",
+			device, captureIntent, captureCount, device->group_3aa.remainIntentCount);
 		break;
 	case V4L2_CID_IS_CAPTURE_EXPOSURETIME:
 		ctrl->id = VENDER_S_CTRL;
@@ -1342,6 +1378,7 @@ int fimc_is_vender_video_s_ctrl(struct v4l2_control *ctrl,
 		case IS_COLD_RESET:
 			specific ->need_cold_reset = true;
 			minfo("[VENDER] need cold reset!!!\n", device);
+			fimc_is_vender_csi_err_print_debug_log(device->sensor);
 			break;
 		default:
 			err("[VENDER]unsupported ioctl(0x%X)", ctrl->id);

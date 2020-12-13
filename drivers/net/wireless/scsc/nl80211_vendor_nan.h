@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * Copyright (c) 2012 - 2019 Samsung Electronics Co., Ltd. All rights reserved
+ * Copyright (c) 2012 - 2020 Samsung Electronics Co., Ltd. All rights reserved
  *
  ****************************************************************************/
 #ifndef __SLSI_NL80211_VENDOR_NAN_H_
@@ -26,7 +26,6 @@
 #define SLSI_NAN_TLV_TAG_RANGING                   0x0110
 #define SLSI_NAN_TLV_WFA_IPV6_LOCAL_LINK           0x0000
 #define SLSI_NAN_TLV_WFA_SERVICE_INFO              0x0001
-
 
 #define SLSI_NAN_MAX_SERVICE_ID 16
 #define SLSI_NAN_MAX_HOST_FOLLOWUP_REQ 20
@@ -206,7 +205,8 @@ enum SLSI_NAN_REQ_ATTRIBUTES {
 	NAN_REQ_ATTR_SERVICE_NAME = 140,
 	NAN_REQ_ATTR_NDP_RESPONSE_CODE,
 	NAN_REQ_ATTR_USE_NDPE_ATTR,
-	NAN_REQ_ATTR_HAL_TRANSACTION_ID
+	NAN_REQ_ATTR_HAL_TRANSACTION_ID,
+	NAN_REQ_ATTR_CONFIG_DISC_MAC_ADDR_RANDOM
 };
 
 enum SLSI_NAN_RESP_ATTRIBUTES {
@@ -1083,6 +1083,7 @@ int slsi_nan_subscribe_cancel(struct wiphy *wiphy, struct wireless_dev *wdev, co
 int slsi_nan_transmit_followup(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len);
 int slsi_nan_set_config(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len);
 int slsi_nan_get_capabilities(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len);
+void slsi_nan_send_disabled_event(struct slsi_dev *sdev, struct net_device *dev, u32 reason);
 int slsi_nan_data_iface_create(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len);
 int slsi_nan_data_iface_delete(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len);
 int slsi_nan_ndp_initiate(struct wiphy *wiphy, struct wireless_dev *wdev, const void *data, int len);

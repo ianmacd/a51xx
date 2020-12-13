@@ -139,6 +139,13 @@ static int sm5713_muic_handle_ccic_ATTACH(struct sm5713_muic_data *muic_data,
 			need_to_run_work = true;
 		}
 
+#if defined(CONFIG_MUIC_BCD_RESCAN)
+		if (muic_data->bc12_retry_skip && pnoti->cable_type) {
+			muic_data->bc12_retry_skip = 0;
+			need_to_run_work = true;
+		}
+#endif
+
 		muic_data->is_water_detect = false;
 	} else {
 		if (pnoti->rprd) {

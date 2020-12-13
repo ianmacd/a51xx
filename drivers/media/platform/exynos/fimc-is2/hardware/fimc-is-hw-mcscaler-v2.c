@@ -1864,7 +1864,7 @@ int fimc_is_hw_mcsc_dma_output(struct fimc_is_hw_ip *hw_ip, struct param_mcs_out
 	}
 
 	fimc_is_scaler_set_wdma_format(hw_ip->regs, hw_ip->id, output_id, img_format);
-	fimc_is_scaler_set_420_conversion(hw_ip->regs, output_id, 0, conv420_en);
+	fimc_is_scaler_set_420_conversion(hw_ip->regs, output_id, 16, conv420_en);
 
 	fimc_is_scaler_get_post_dst_size(hw_ip->regs, output_id, &scaled_width, &scaled_height);
 	if ((scaled_width != 0) && (scaled_height != 0)) {
@@ -2433,12 +2433,12 @@ int fimc_is_hw_mcsc_check_format(enum mcsc_io_type type, u32 format, u32 bit_wid
 		break;
 	case HW_MCSC_DMA_OUTPUT:
 		/* check dma output */
-		if (width < 16 || width > 8192) {
+		if (width < 16) {
 			ret = -EINVAL;
 			err_hw("Invalid MCSC DMA Output width(%d)", width);
 		}
 
-		if (height < 16 || height > 8192) {
+		if (height < 16) {
 			ret = -EINVAL;
 			err_hw("Invalid MCSC DMA Output height(%d)", height);
 		}

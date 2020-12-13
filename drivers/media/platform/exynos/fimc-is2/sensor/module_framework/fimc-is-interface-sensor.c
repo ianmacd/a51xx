@@ -2070,6 +2070,10 @@ int copy_sensor_ctl(struct fimc_is_sensor_interface *itf,
 			|| (shot->ctl.aa.mode == AA_CONTROL_OFF)) {
 			sensor_ctl->valid_sensor_ctrl = true;
 			sensor_ctl->is_sensor_request = true;
+
+			/* Updating min_fps and max_fps, so that previous value is overwritten */
+			sensor_peri->cis.min_fps = shot->ctl.aa.aeTargetFpsRange[0];
+			sensor_peri->cis.max_fps = shot->ctl.aa.aeTargetFpsRange[1];
 		} else if (shot->ctl.aa.aeTargetFpsRange[1] != 0) {
 			u32 duration_us = 1000000 / shot->ctl.aa.aeTargetFpsRange[1];
 			sensor_ctl->cur_cam20_sensor_udctrl.frameDuration = fimc_is_sensor_convert_us_to_ns(duration_us);
@@ -3357,6 +3361,38 @@ int get_static_mem(int ctrl_id, void **mem, int *size) {
 	return err;
 }
 
+int get_delayed_preflash_time(struct fimc_is_sensor_interface *itf, u32 *delayedTime)
+{
+	int ret = 0;
+	struct fimc_is_device_sensor_peri *sensor_peri = NULL;
+	struct v4l2_subdev *subdev_flash;
+	struct v4l2_control ctrl;
+
+	WARN_ON(!itf);
+	WARN_ON(itf->magic != SENSOR_INTERFACE_MAGIC);
+
+	sensor_peri = container_of(itf, struct fimc_is_device_sensor_peri, sensor_interface);
+	WARN_ON(!sensor_peri);
+
+	subdev_flash = sensor_peri->subdev_flash;
+
+	ctrl.id = V4L2_CID_FLASH_GET_DELAYED_PREFLASH_TIME;
+	ctrl.value = 0;
+	ret = v4l2_subdev_call(subdev_flash, core, g_ctrl, &ctrl);
+	if (ret) {
+		dbg_flash("[%s] get fail (%d)\n", __func__, ret);
+		ret = -1;
+		goto p_err;
+	} else {
+		*delayedTime = (u32)ctrl.value;
+	}
+
+	dbg_flash("[%s] delayedTime(%d)\n", __func__, ctrl.value);
+
+p_err:
+	return ret;
+}
+
 int get_sensor_state(struct fimc_is_sensor_interface *itf)
 {
 	struct fimc_is_device_sensor *sensor;
@@ -3805,6 +3841,7 @@ int init_sensor_interface(struct fimc_is_sensor_interface *itf)
 	itf->cis_ext2_itf_ops.set_low_noise_mode = set_low_noise_mode;
 	itf->cis_ext2_itf_ops.get_sensor_max_dynamic_fps = get_sensor_max_dynamic_fps;
 	itf->cis_ext2_itf_ops.get_static_mem = get_static_mem;
+	itf->cis_ext2_itf_ops.get_delayed_preflash_time = get_delayed_preflash_time;
 	itf->cis_ext_itf_ops.set_adjust_sync = set_adjust_sync;
 	itf->cis_ext_itf_ops.request_frame_length_line = request_frame_length_line;
 	itf->cis_ext_itf_ops.request_sensitivity = request_sensitivity;

@@ -2776,7 +2776,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2270 (0x08DE)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint16
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 65535
  * DEFAULT       : 128
@@ -3535,7 +3535,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2362 (0x093A)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint16
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 65535
  * DEFAULT       : 12
@@ -4117,7 +4117,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2494 (0x09BE)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint32
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 2147483647
  * DEFAULT       : 20000
@@ -4197,7 +4197,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2500 (0x09C4)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint32
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 2147483647
  * DEFAULT       : 400000
@@ -4215,7 +4215,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2501 (0x09C5)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint32
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 2147483647
  * DEFAULT       : 50000
@@ -4308,7 +4308,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2507 (0x09CB)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint16
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 65535
  * DEFAULT       : 0XFFFF
@@ -4425,7 +4425,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2514 (0x09D2)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint32
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 2147483647
  * DEFAULT       : 30000
@@ -4448,7 +4448,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2515 (0x09D3)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint16
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 65535
  * DEFAULT       : 20000
@@ -4472,7 +4472,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2516 (0x09D4)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint32
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 2147483647
  * DEFAULT       : 10000
@@ -4547,7 +4547,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2520 (0x09D8)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint16
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 65535
  * DEFAULT       : 15000
@@ -4626,7 +4626,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2524 (0x09DC)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint16
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 65535
  * DEFAULT       :
@@ -4679,7 +4679,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 2529 (0x09E1)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint16
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 65535
  * DEFAULT       : 50000
@@ -5546,7 +5546,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 4078 (0x0FEE)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint16
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 65535
  * DEFAULT       :
@@ -5769,7 +5769,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 4171 (0x104B)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint32
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 2147483647
  * DEFAULT       : 100
@@ -5788,7 +5788,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 4173 (0x104D)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint32
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 2147483647
  * DEFAULT       : 2000
@@ -8113,7 +8113,7 @@ void slsi_mib_buf_append(struct slsi_mib_data *dst, size_t bufferLength, u8 *buf
  * PSID          : 6110 (0x17DE)
  * PER INTERFACE?: NO
  * TYPE          : SlsiUint32
- * UNITS         : Âµs
+ * UNITS         : µs
  * MIN           : 0
  * MAX           : 2147483647
  * DEFAULT       : 30000

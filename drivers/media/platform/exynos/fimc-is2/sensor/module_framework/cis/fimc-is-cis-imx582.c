@@ -1319,7 +1319,10 @@ int sensor_imx582_cis_adjust_frame_duration(struct v4l2_subdev *subdev,
 	dbg_sensor(1, "[%s](vsync cnt = %d) input exp(%d), calculated frame duration(%d), min_frame_us(%d), max_frame_us_time(%d)\n",
 			__func__, cis_data->sen_vsync_count, input_exposure_time, frame_duration, cis_data->min_frame_us_time, max_frame_us_time);
 
-	*target_duration = MAX(frame_duration, cis_data->min_frame_us_time);
+	if (input_exposure_time <= 0)
+		*target_duration = cis_data->min_frame_us_time;
+	else
+		*target_duration = MAX(frame_duration, cis_data->min_frame_us_time);
 
 	/*
 	 * For recording with fixed fps (>= 10fps).
@@ -2400,6 +2403,29 @@ p_err:
 	return ret;
 }
 
+int sensor_imx582_cis_compensate_gain_for_extremely_br(struct v4l2_subdev *subdev,u32 expo, u32 *again, u32 *dgain)
+{
+	struct fimc_is_cis *cis = NULL;
+	struct fimc_is_device_sensor *device = NULL;
+	u32 setfile;
+	int ret = 0;
+
+	cis = (struct fimc_is_cis *)v4l2_get_subdevdata(subdev);
+	FIMC_BUG(!cis);
+	
+	device = (struct fimc_is_device_sensor *)v4l2_get_subdev_hostdata(subdev);
+	FIMC_BUG(!device);
+
+	setfile = (device->ischain->setfile & FIMC_IS_SETFILE_MASK);
+	/* sensor_cis_compensate_gain_for_extremely_br overwrites AGain provided by DDK, so ignore for PRO mode */
+	if (setfile == ISS_SUB_SCENARIO_STILL_PREVIEW_PRO_MODE) {
+		return ret;
+	}
+
+	ret = sensor_cis_compensate_gain_for_extremely_br(subdev, expo, again, dgain);
+	return ret;
+}
+
 void sensor_imx582_cis_data_calc(struct v4l2_subdev *subdev, u32 mode)
 {
 	int ret = 0;
@@ -2504,7 +2530,6 @@ p_err:
 	return ret;
 }
 
-
 static struct fimc_is_cis_ops cis_ops_imx582 = {
 	.cis_init = sensor_imx582_cis_init,
 	.cis_log_status = sensor_imx582_cis_log_status,
@@ -2531,7 +2556,7 @@ static struct fimc_is_cis_ops cis_ops_imx582 = {
 	.cis_get_digital_gain = sensor_imx582_cis_get_digital_gain,
 	.cis_get_min_digital_gain = sensor_imx582_cis_get_min_digital_gain,
 	.cis_get_max_digital_gain = sensor_imx582_cis_get_max_digital_gain,
-	.cis_compensate_gain_for_extremely_br = sensor_cis_compensate_gain_for_extremely_br,
+	.cis_compensate_gain_for_extremely_br = sensor_imx582_cis_compensate_gain_for_extremely_br,
 	.cis_set_long_term_exposure = sensor_imx582_cis_long_term_exposure,
 	.cis_set_wb_gains = sensor_imx582_cis_set_wb_gain,
 	.cis_data_calculation = sensor_imx582_cis_data_calc,

@@ -33,6 +33,7 @@
 #define ENABLE_REMOSAIC_CAPTURE                               /* Base Remosaic */
 #define ENABLE_REMOSAIC_CAPTURE_WITH_ROTATION                 /* M2M and Rotation is used during Remosaic */
 #define CHAIN_USE_STRIPE_PROCESSING  1                        /* Support STRIPE_PROCESSING during Remosaic */
+#define STRIPE_MARGIN_WIDTH_1024                              /* Stripe margin width size set as 1024 when this define enable. Default is 512 */
 #define USE_AP_PDAF                                           /* Support sensor PDAF SW Solution */
 //#define USE_SENSOR_WDR                                      /* Support sensor WDR */
 //#define SUPPORT_SENSOR_3DHDR                                /* whether capable of 3DHDR or not */
@@ -68,5 +69,7 @@
 
 /* To handle CSI error issue, disable the dual sync setting */
 #define DISABLE_DUAL_SYNC
+
+#define ENABLE_FULLCHAIN_OVERFLOW_RECOVERY
 
 #endif /* FIMC_IS_VENDOR_CONFIG_A51_H */

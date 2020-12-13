@@ -107,7 +107,7 @@ int mx_mmap_mmap(struct file *filp, struct vm_area_struct *vma)
 	if (vma->vm_end - vma->vm_start > MAX_MEMORY) {
 		SCSC_TAG_ERR(MX_MMAP, "Incorrect mapping size %ld, should be less than %ld\n",
 		       vma->vm_end - vma->vm_start, MAX_MEMORY);
-		err = -EINVAL;
+		return -EINVAL;
 	}
 	mx_dev = filp->private_data;
 

@@ -2209,7 +2209,8 @@ static void rt5665_jack_detect_handler(struct work_struct *work)
 					RT5665_EJD_CTRL_1, 0x180, 0x180);
 
 				rt5665_button_detect(rt5665->codec);
-			} else {
+			} else if ((rt5665->jack_type & SND_JACK_HEADSET) ==
+				SND_JACK_HEADSET) {
 				sar_adc_value = snd_soc_read(rt5665->codec,
 					RT5665_SAR_IL_CMD_4) & 0x7ff;
 				rt5665->adc_val = sar_adc_value;
@@ -2263,6 +2264,8 @@ static void rt5665_jack_detect_handler(struct work_struct *work)
 			regmap_update_bits(rt5665->regmap, RT5665_MICBIAS_2,
 				0x200, reg094);
 
+			rt5665->do_rek = false;
+	
 			dev_dbg(codec->dev, "jack_type = 0x%04x\n",
 				rt5665->jack_type);
 		}
@@ -2320,6 +2323,12 @@ static void rt5665_jack_detect_open_gender_handler(struct work_struct *work)
 
 		val = !gpio_get_value(rt5665->pdata.ext_ant_det_gpio);
 		if (val) {
+			if ((rt5665->jack_type & SND_JACK_HEADSET) == SND_JACK_HEADSET) {
+				mutex_unlock(&rt5665->open_gender_mutex);
+				wake_lock_timeout(&rt5665->jack_detect_wake_lock, HZ);
+				return;
+			}
+
 			dev_dbg(codec->dev, "(open gender) jack in\n");
 			rt5665->jack_type = rt5665_headset_detect_open_gender(
 						rt5665->codec, 1);
@@ -2340,6 +2349,43 @@ static void rt5665_jack_detect_open_gender_handler(struct work_struct *work)
 			else
 			rt5665->irq_work_delay_time = 0;
 		} else {
+			regmap_update_bits(rt5665->regmap, RT5665_MICBIAS_2,
+				0x100, 0x100);
+			regmap_write(rt5665->regmap, RT5665_SAR_IL_CMD_1,
+				0xa297);
+			msleep(20);
+			sar_adc_value = snd_soc_read(rt5665->codec,
+				RT5665_SAR_IL_CMD_4) & 0x7ff;
+			dev_dbg(codec->dev, "(open gender fix) sar_adc_value = %d\n",
+				sar_adc_value);
+
+			if (sar_adc_value <= rt5665->pdata.sar_hs_open_gender) {
+				dev_dbg(codec->dev, "(open gender) jack remaining\n");
+
+				if (rt5665->jack_type != SND_JACK_HEADSET) {
+					rt5665->jack_type = rt5665_headset_detect_open_gender(
+								rt5665->codec, 1);
+#ifdef CONFIG_SWITCH
+					switch_set_state(&rt5665_headset_switch, 1);
+#endif
+					if (rt5665->pdata.delay_plug_out_pb)
+						rt5665->irq_work_delay_time =
+							rt5665->pdata.delay_plug_out_pb;
+					else
+						rt5665->irq_work_delay_time = 0;
+
+					dev_dbg(codec->dev, "(open gender fix) jack_type = 0x%04x\n",
+						rt5665->jack_type);
+					
+					snd_soc_jack_report(rt5665->hs_jack, rt5665->jack_type,
+						SND_JACK_HEADSET);
+				}
+
+				mutex_unlock(&rt5665->open_gender_mutex);
+				wake_lock_timeout(&rt5665->jack_detect_wake_lock, HZ);
+				return;
+			}
+
 			dev_dbg(codec->dev, "(open gender) jack out\n");
 			rt5665->jack_type = rt5665_headset_detect_open_gender(
 						rt5665->codec, 0);

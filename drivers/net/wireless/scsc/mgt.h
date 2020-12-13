@@ -198,9 +198,6 @@
 #define SLSI_DHCP_MESSAGE_TYPE_FORCERENEW 0x09
 #define SLSI_DHCP_MESSAGE_TYPE_INVALID    0x0A
 
-#ifdef CONFIG_SCSC_WLAN_STA_ENHANCED_ARP_DETECT
-#define SLSI_MAX_ARP_SEND_FRAME  8
-#endif
 #define SLSI_ARP_SRC_IP_ADDR_OFFSET   14
 #define SLSI_ARP_DEST_IP_ADDR_OFFSET  24
 #define SLSI_IS_GRATUITOUS_ARP(frame) (!memcmp(&frame[SLSI_ARP_SRC_IP_ADDR_OFFSET],\
@@ -237,6 +234,13 @@ enum slsi_sta_conn_state {
 	SLSI_STA_CONN_STATE_CONNECTING = 1,
 	SLSI_STA_CONN_STATE_DOING_KEY_CONFIG = 2,
 	SLSI_STA_CONN_STATE_CONNECTED = 3
+};
+
+enum slsi_wlan_vendor_attr_rcl_channel_list {
+	SLSI_WLAN_VENDOR_ATTR_SSID = 1,
+	SLSI_WLAN_VENDOR_ATTR_RCL_CHANNEL_COUNT,
+	SLSI_WLAN_VENDOR_ATTR_RCL_CHANNEL_LIST,
+	SLSI_WLAN_VENDOR_ATTR_RCL_CHANNEL_LIST_EVENT_MAX
 };
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(3, 13, 0))
@@ -522,7 +526,7 @@ int slsi_is_tcp_sync_packet(struct net_device *dev, struct sk_buff *skb);
 #endif
 
 #ifdef CONFIG_SCSC_WLAN_ENHANCED_PKT_FILTER
-int slsi_set_enhanced_pkt_filter(struct net_device *dev, u8 pkt_filter_enable);
+int slsi_set_enhanced_pkt_filter(struct net_device *dev, char *command, int buf_len);
 #endif
 void slsi_set_packet_filters(struct slsi_dev *sdev, struct net_device *dev);
 int  slsi_update_packet_filters(struct slsi_dev *sdev, struct net_device *dev);
@@ -556,7 +560,7 @@ int slsi_get_mhs_ws_chan_vsdb(struct wiphy *wiphy, struct net_device *dev,
 int slsi_get_mhs_ws_chan_rsdb(struct wiphy *wiphy, struct net_device *dev,
 			      struct cfg80211_ap_settings *settings,
 			      struct slsi_dev *sdev, int *wifi_sharing_channel_switched);
-int slsi_set_wifisharing_permitted_channels(struct slsi_dev *sdev, struct net_device *dev, char *arg);
+int slsi_set_wifisharing_permitted_channels(struct net_device *dev, char *buffer, int buf_len);
 int slsi_check_if_channel_restricted_already(struct slsi_dev *sdev, int channel);
 #endif
 struct net_device *slsi_dynamic_interface_create(struct wiphy        *wiphy,
@@ -575,6 +579,9 @@ int slsi_read_disconnect_ind_timeout(struct slsi_dev *sdev, u16 psid);
 int slsi_read_regulatory_rules(struct slsi_dev *sdev, struct slsi_802_11d_reg_domain *domain_info, const char *alpha2);
 int slsi_read_regulatory_rules_fw(struct slsi_dev *sdev, struct slsi_802_11d_reg_domain *domain_info, const char *alpha2);
 int slsi_send_acs_event(struct slsi_dev *sdev, struct slsi_acs_selected_channels acs_selected_channels);
+struct slsi_roaming_network_map_entry *slsi_roam_channel_cache_get(struct net_device *dev, const u8 *ssid);
+int slsi_roam_channel_cache_get_channels_int(struct net_device *dev, struct slsi_roaming_network_map_entry *network_map, u8 *channels);
+int slsi_send_rcl_channel_list_event(struct slsi_dev *sdev, u32 channel_count, u16 *channel_list, u8 *ssid, u8 ssid_len);
 #ifdef CONFIG_SCSC_WLAN_ENABLE_MAC_RANDOMISATION
 int slsi_set_mac_randomisation_mask(struct slsi_dev *sdev, u8 *mac_address_mask);
 #endif
@@ -585,7 +592,7 @@ int slsi_wlan_unsync_vif_activate(struct slsi_dev *sdev, struct net_device *dev,
 void slsi_wlan_unsync_vif_deactivate(struct slsi_dev *sdev, struct net_device *devbool, bool hw_available);
 int slsi_is_wes_action_frame(const struct ieee80211_mgmt *mgmt);
 void slsi_scan_ind_timeout_handle(struct work_struct *work);
-void slsi_vif_cleanup(struct slsi_dev *sdev, struct net_device *dev, bool hw_available);
+void slsi_vif_cleanup(struct slsi_dev *sdev, struct net_device *dev, bool hw_available, bool is_recovery);
 void slsi_scan_cleanup(struct slsi_dev *sdev, struct net_device *dev);
 void slsi_dump_stats(struct net_device *dev);
 int slsi_send_hanged_vendor_event(struct slsi_dev *sdev, u16 scsc_panic_code);
@@ -610,13 +617,15 @@ int slsi_find_chan_idx(u16 chan, u8 hw_mode);
 int slsi_set_num_antennas(struct net_device *dev, const u16 num_of_antennas);
 #endif
 int slsi_set_latency_mode(struct net_device *dev, int latency_mode, int cmd_len);
-
 void slsi_failure_reset(struct work_struct *work);
-#ifdef CONFIG_SCSC_WLAN_SILENT_RECOVERY
+#ifdef CONFIG_SCSC_WLAN_FAST_RECOVERY
 int slsi_start_ap(struct wiphy *wiphy, struct net_device *dev,
 		  struct cfg80211_ap_settings *settings);
 void slsi_subsystem_reset(struct work_struct *work);
 void slsi_chip_recovery(struct work_struct *work);
 #endif
 
+#ifdef CONFIG_SCSC_WLAN_DYNAMIC_ITO
+int slsi_set_ito(struct net_device *dev, char *command, int buf_len);
+#endif
 #endif /*__SLSI_MGT_H__*/

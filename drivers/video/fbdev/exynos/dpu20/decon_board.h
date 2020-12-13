@@ -12,7 +12,11 @@
 
 #include <linux/device.h>
 
+#if defined(CONFIG_EXYNOS_DPU20)
 extern unsigned int lcdtype;
+#elif defined(CONFIG_EXYNOS_DPU30)
+extern int boot_panel_id;
+#endif
 
 extern void run_list(struct device *dev, const char *name);
 extern int of_gpio_get_active(const char *gpioname);

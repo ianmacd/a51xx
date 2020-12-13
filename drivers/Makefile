@@ -188,7 +188,11 @@ obj-$(CONFIG_MULTIPLEXER)	+= mux/
 
 obj-$(CONFIG_EXYNOS_BTS)	+= bts/
 obj-$(CONFIG_TRUSTONIC_TEE)     += gud/
-obj-$(CONFIG_BATTERY_SAMSUNG)     += battery_v2/
+ifeq ($(CONFIG_BATTERY_SAMSUNG_V2), y)
+  obj-$(CONFIG_BATTERY_SAMSUNG)   += battery_v2/
+else
+  obj-$(CONFIG_BATTERY_SAMSUNG)   += battery/
+endif
 obj-$(CONFIG_SWITCH)     	+= switch/
 
 obj-$(CONFIG_VISION_SUPPORT)    += vision/
@@ -215,3 +219,9 @@ obj-y				+= kperfmon/
 
 # GNSS
 obj-$(CONFIG_GPS_BCM4753)	+= gps/
+
+#TZIC
+obj-y  += security/samsung/tzic/
+
+# SPU signature verify
+obj-$(CONFIG_SPU_VERIFY) += spu_verify/

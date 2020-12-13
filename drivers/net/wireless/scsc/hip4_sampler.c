@@ -440,13 +440,13 @@ void hip4_sampler_tcp_decode(struct slsi_dev *sdev, struct net_device *dev, u8 *
 
 	tcp_hdr = (struct tcphdr *)(ip_frame + ip_data_offset);
 
+	slsi_spinlock_lock(&ndev_vif->tcp_ack_lock);
 	/* Search for an existing record on this connection. */
 	for (idx = 0; idx < TCP_ACK_SUPPRESSION_RECORDS_MAX; idx++) {
 		struct slsi_tcp_ack_s *tcp_ack;
 		u32 rwnd = 0;
 
 		tcp_ack = &ndev_vif->ack_suppression[idx];
-		slsi_spinlock_lock(&tcp_ack->lock);
 		if ((tcp_ack->dport == tcp_hdr->source) && (tcp_ack->sport == tcp_hdr->dest)) {
 			if (from_ba && tcp_hdr->syn && tcp_hdr->ack) {
 				unsigned char *options;
@@ -503,11 +503,10 @@ void hip4_sampler_tcp_decode(struct slsi_dev *sdev, struct net_device *dev, u8 *
 					SCSC_HIP4_SAMPLER_TCP_ACK_IN(sdev->minor_prof, tcp_ack->stream_id, be32_to_cpu(tcp_hdr->ack_seq));
 				}
 			}
-			slsi_spinlock_unlock(&tcp_ack->lock);
 			break;
 		}
-		slsi_spinlock_unlock(&tcp_ack->lock);
 	}
+	slsi_spinlock_unlock(&ndev_vif->tcp_ack_lock);
 }
 
 #ifdef CONFIG_SCSC_LOG_COLLECTION
@@ -526,6 +525,8 @@ int hip4_collect(struct scsc_log_collector_client *collect_client, size_t size)
 	u32 num_samples;
 	struct hip4_sampler_dev *hip4_dev;
 	void *buf;
+	struct scsc_hip4_sampler_header header;
+
 
 	SLSI_INFO_NODEV("Triggered log collection in hip4_sampler\n");
 
@@ -541,6 +542,32 @@ int hip4_collect(struct scsc_log_collector_client *collect_client, size_t size)
 			buf = vmalloc(num_samples * sizeof(struct hip4_record));
 			if (!buf)
 				continue;
+			/* Write the hip4 sampler header */
+			memset(&header, 0, sizeof(header));
+			memcpy(header.magic, SCSC_HIP4_SAMPLER_MAGIC, 4);
+			header.offset_data = sizeof(header);
+			header.version_major = SCSC_HIP4_SAMPLER_HEADER_VERSION_MAJOR;
+			header.version_minor = SCSC_HIP4_SAMPLER_HEADER_VERSION_MINOR;
+#ifdef CONFIG_SOC_EXYNOS9630
+			header.platform = SCSC_HIP4_SAMPLER_EXYNOS9630;
+#elif defined(CONFIG_SOC_EXYNOS9610)
+			header.platform = SCSC_HIP4_SAMPLER_EXYNOS9610;
+#else
+			header.platform = SCSC_HIP4_SAMPLER_UNDEF;
+#endif
+			/* We are currently using only one sample type */
+			header.sample_type = SCSC_HIP4_SAMPLER_TYPE_TCP;
+			if (hip4_sampler_in_htput)
+				header.hip4_status |= BIT(0);
+#ifdef CONFIG_DEBUG_SPINLOCK
+			header.hip4_status |= BIT(1);
+#endif
+			header.num_samples = num_samples;
+
+			ret = scsc_log_collector_write((char *)&header, sizeof(header), 1);
+			if (ret)
+				goto error;
+
 			spin_lock_irqsave(&g_spinlock, flags);
 			ret = kfifo_out(&hip4_dev->fifo, buf, num_samples);
 			spin_unlock_irqrestore(&g_spinlock, flags);

@@ -800,6 +800,8 @@ struct mfc_dev {
 
 	int num_inst;
 
+	unsigned long otf_inst_bits;
+
 	struct mutex mfc_mutex;
 
 	int int_condition;

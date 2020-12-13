@@ -62,6 +62,11 @@
 #define GPIO_LEVEL_HIGH		1
 #define GPIO_LEVEL_LOW		0
 
+#if defined(CONFIG_MUIC_BCD_RESCAN)
+#define SM5713_MUIC_REG_INT_BCD_RESCAN	0x25
+#define SM5713_MUIC_REG_CHG_TYPE		0x50
+#endif
+
 static struct sm5713_muic_data *static_data;
 
 static int com_to_open(struct sm5713_muic_data *muic_data);
@@ -664,10 +669,17 @@ static int sm5713_get_vbus_value(struct sm5713_muic_data *muic_data)
 		vol = 6;
 	else if ((vbus_voltage > 6500) && (vbus_voltage <= 7500))
 		vol = 7;
+#if defined(CONFIG_SEC_FACTORY)
+	else if ((vbus_voltage > 7500) && (vbus_voltage <= 8000))
+		vol = 8;
+	else if ((vbus_voltage > 8000) && (vbus_voltage <= 9500))
+		vol = 9;
+#else
 	else if ((vbus_voltage > 7500) && (vbus_voltage <= 8500))
 		vol = 8;
 	else if ((vbus_voltage > 8500) && (vbus_voltage <= 9500))
 		vol = 9;
+#endif
 	else if ((vbus_voltage > 9500) && (vbus_voltage <= 10500))
 		vol = 10;
 	else
@@ -1123,6 +1135,89 @@ static int attach_jig_uart_path(struct sm5713_muic_data *muic_data, int new_dev)
 	return ret;
 }
 
+#if defined(CONFIG_MUIC_BCD_RESCAN)
+static void sm5713_muic_BCD_rescan(struct sm5713_muic_data *muic_data)
+{
+	struct i2c_client *i2c = muic_data->i2c;
+	int reg_ctrl1 = 0, reg_ctrl2 = 0;
+
+	pr_info("[%s:%s] BCD_RESCAN\n", MUIC_DEV_NAME, __func__);
+
+	reg_ctrl1 = sm5713_i2c_read_byte(i2c, SM5713_MUIC_REG_REVID2);
+	reg_ctrl2 = reg_ctrl1 | 0x10;
+	sm5713_i2c_write_byte(i2c, SM5713_MUIC_REG_REVID2, reg_ctrl2);
+
+	reg_ctrl2 = reg_ctrl2 & 0xEF;
+	sm5713_i2c_write_byte(i2c, SM5713_MUIC_REG_REVID2, reg_ctrl2);
+
+	pr_info("[%s:%s] reg_ctrl1=0x%x, reg_ctrl2=0x%x\n", MUIC_DEV_NAME,
+			__func__, reg_ctrl1, reg_ctrl2);
+}
+
+static int sm5713_muic_bc12_retry_check(struct sm5713_muic_data *muic_data)
+{
+	struct i2c_client *i2c = muic_data->i2c;
+	int new_dev = ATTACHED_DEV_TIMEOUT_OPEN_MUIC;
+	int int_bcdrescan = 0, chg_type = 0;
+	int vbvolt = 0;
+
+	int_bcdrescan = sm5713_i2c_read_byte(i2c, SM5713_MUIC_REG_INT_BCD_RESCAN);
+	chg_type = sm5713_i2c_read_byte(i2c, SM5713_MUIC_REG_CHG_TYPE);
+	vbvolt = sm5713_i2c_read_byte(i2c, 0x3E);
+	vbvolt = vbvolt & 0x01;
+	pr_info("[%s:%s]: INT_BCD_RESCAN=[0x%02x], CHG_TYPE=[0x%02x], vbvolt=%d\n",
+			MUIC_DEV_NAME, __func__, int_bcdrescan, chg_type, vbvolt);
+
+	if (int_bcdrescan & 0x40) {	/* bit 6 : Interrupts Occurred After BCD rescan Operation*/
+		if (chg_type == 0x01) {	/* DCP */
+			new_dev = ATTACHED_DEV_TA_MUIC;
+			pr_info("[%s:%s] DCP\n", MUIC_DEV_NAME, __func__);
+		} else if (chg_type == 0x02) {	/* CDP */
+			new_dev = ATTACHED_DEV_CDP_MUIC;
+			pr_info("[%s:%s] CDP\n", MUIC_DEV_NAME, __func__);
+		} else if (chg_type == 0x04) {	/* SDP */
+			new_dev = ATTACHED_DEV_USB_MUIC;
+			pr_info("[%s:%s] USB(SDP)\n", MUIC_DEV_NAME, __func__);
+		} else if (chg_type == 0x08) {	/* DCD_OUT_SDP */
+			new_dev = ATTACHED_DEV_TIMEOUT_OPEN_MUIC;
+			pr_info("[%s:%s] DCD_OUT_SDP\n", MUIC_DEV_NAME, __func__);
+		} else if (chg_type == 0x10) {	/* U200 */
+			new_dev = ATTACHED_DEV_UNOFFICIAL_TA_MUIC;
+			pr_info("[%s:%s] U200\n", MUIC_DEV_NAME, __func__);
+		} else if (chg_type == 0x11) {	/* AFC TA */
+			new_dev = ATTACHED_DEV_TA_MUIC;
+			pr_info("[%s:%s] DCP(AFC)\n", MUIC_DEV_NAME, __func__);
+		} else if (chg_type == 0x12) {	/* LO_TA */
+			new_dev = ATTACHED_DEV_UNOFFICIAL_TA_MUIC;
+			pr_info("[%s:%s] LO_TA\n", MUIC_DEV_NAME, __func__);
+		} else if (chg_type == 0x13) {	/* QC20_TA */
+			new_dev = ATTACHED_DEV_TA_MUIC;
+			pr_info("[%s:%s] DCP(QC)\n", MUIC_DEV_NAME, __func__);
+		} else {
+			pr_info("[%s:%s] UNKNOWN\n", MUIC_DEV_NAME, __func__);
+		}
+	} else {
+		pr_info("[%s:%s] DCD_OUT_SDP\n", MUIC_DEV_NAME, __func__);
+	}
+
+	return new_dev;
+}
+
+static void muic_bc12_retry_work(struct work_struct *work)
+{
+	struct sm5713_muic_data *muic_data = container_of(work,
+			struct sm5713_muic_data, bc12_retry_work.work);
+
+	pr_info("[%s:%s]\n", MUIC_DEV_NAME, __func__);
+
+	mutex_lock(&muic_data->muic_mutex);
+	wake_lock(&muic_data->wake_lock);
+	sm5713_muic_detect_dev(muic_data, SM5713_MUIC_IRQ_WORK);
+	wake_unlock(&muic_data->wake_lock);
+	mutex_unlock(&muic_data->muic_mutex);
+}
+#endif
+
 int sm5713_muic_get_jig_status(void)
 {
 	struct i2c_client *i2c = static_data->i2c;
@@ -1526,6 +1621,11 @@ static void sm5713_muic_handle_detach(struct sm5713_muic_data *muic_data,
 	}
 #endif /* CONFIG_MUIC_NOTIFIER */
 
+#if defined(CONFIG_MUIC_BCD_RESCAN)
+	muic_data->bc12_retry_count = 0;
+	muic_data->bc12_retry_skip = 0;
+#endif
+
 	muic_data->attached_dev = ATTACHED_DEV_NONE_MUIC;
 }
 
@@ -1702,9 +1802,36 @@ static void sm5713_muic_detect_dev(struct sm5713_muic_data *muic_data, int irq)
 					MUIC_DEV_NAME, __func__);
 			return;
 		}
+
+#if defined(CONFIG_MUIC_BCD_RESCAN)
+		if (irq == SM5713_MUIC_IRQ_PROBE) {
+			muic_data->bc12_retry_skip = 1;
+			intr = MUIC_INTR_ATTACH;
+			new_dev = ATTACHED_DEV_TIMEOUT_OPEN_MUIC;
+			pr_info("[%s:%s] DCD_OUT_SDP, check later\n", MUIC_DEV_NAME, __func__);
+		} else if (muic_data->ccic_afc_state == SM5713_MUIC_AFC_ABNORMAL) {
+			intr = MUIC_INTR_ATTACH;
+			new_dev = ATTACHED_DEV_TIMEOUT_OPEN_MUIC;
+			pr_info("[%s:%s] DCD_OUT_SDP\n", MUIC_DEV_NAME, __func__);
+		} else if (muic_data->bc12_retry_count < 1) {
+			muic_data->bc12_retry_count++;
+			pr_info("[%s:%s] DCD_OUT_SDP (bc12_retry_count=%d)\n",
+					MUIC_DEV_NAME, __func__, muic_data->bc12_retry_count);
+			msleep(50);
+			sm5713_muic_BCD_rescan(muic_data);
+			cancel_delayed_work(&muic_data->bc12_retry_work);
+			schedule_delayed_work(&muic_data->bc12_retry_work,
+					msecs_to_jiffies(850)); /* 850 msec */
+			return;
+		} else {
+			intr = MUIC_INTR_ATTACH;
+			new_dev = sm5713_muic_bc12_retry_check(muic_data);
+		}
+#else
 		intr = MUIC_INTR_ATTACH;
 		new_dev = ATTACHED_DEV_TIMEOUT_OPEN_MUIC;
 		pr_info("[%s:%s] DCD_OUT_SDP\n", MUIC_DEV_NAME, __func__);
+#endif
 		break;
 
 	default:
@@ -1900,6 +2027,9 @@ static irqreturn_t sm5713_muic_irq_thread(int irq, void *data)
 		cancel_delayed_work(&muic_data->afc_prepare_work);
 #if defined(CONFIG_MUIC_SUPPORT_CCIC)
 		cancel_delayed_work(&muic_data->ccic_afc_work);
+#endif
+#if defined(CONFIG_MUIC_BCD_RESCAN)
+		cancel_delayed_work(&muic_data->bc12_retry_work);
 #endif
 	}
 
@@ -2363,6 +2493,12 @@ static int sm5713_muic_probe(struct platform_device *pdev)
 	muic_data->is_hiccup_mode = false;
 	muic_data->pdata->muic_set_hiccup_mode_cb =
 				sm5713_muic_ccic_set_hiccup_mode;
+#endif
+
+#if defined(CONFIG_MUIC_BCD_RESCAN)
+	muic_data->bc12_retry_count = 0;
+	muic_data->bc12_retry_skip = 0;
+	INIT_DELAYED_WORK(&muic_data->bc12_retry_work, muic_bc12_retry_work);
 #endif
 
 #if defined(CONFIG_OF)

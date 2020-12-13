@@ -205,13 +205,15 @@ void report_sensor_data(struct ssp_data *data, int type,
 			data->camera_lux_en = true;
 			data->low_lux_mode = 1;
 			data->report_ab_lux = data->buf[type].ab_lux;
+			data->camera_lux = -1;
 			data->buf[type].ab_lux = CAMERA_LUX_ENABLE;
 		} else if(data->camera_lux_en) {
 			data->report_ab_lux = data->buf[type].ab_lux;
-			ssp_infof("Light AB Sensor : there is no camera lux(%d), low_lux_mode %d", data->buf[type].ab_lux, data->low_lux_mode);
-			return;
-		} else if(data->low_lux_mode == 1) {
-			ssp_infof("Light AB Sensor : high cam lux mode(%d)", data->buf[type].ab_lux);
+			if(data->camera_lux < 0) {
+				ssp_infof("Light AB Sensor : there is no camera lux(%d), low_lux_mode %d", data->buf[type].ab_lux, data->low_lux_mode);
+			} else if(data->low_lux_mode == 1) {
+				ssp_infof("Light AB Sensor : high cam lux mode(%d)", data->buf[type].ab_lux);
+			}
 			return;
 		}
 #else

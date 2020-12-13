@@ -9,9 +9,14 @@
 #include "ba.h"
 #include "mgt.h"
 
-/* Age value for frames in MPDU reorder buffer */
-static int ba_mpdu_reorder_age_timeout = 150; /* 150 milli seconds */
-module_param(ba_mpdu_reorder_age_timeout, int, S_IRUGO | S_IWUSR);
+/* Timeout (in milliseconds) for frames in MPDU reorder buffer
+ *
+ * When a frame is out of order, the frame is stored in Reorder buffer.
+ * Frames can be released from the buffer, if subsequent frames arrive such that
+ * frames can be ordered or when this timeout occurs
+ */
+static uint ba_mpdu_reorder_age_timeout = 100; /* 100 milliseconds */
+module_param(ba_mpdu_reorder_age_timeout, uint, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(ba_mpdu_reorder_age_timeout, "Timeout (in ms) before a BA frame in Reorder buffer is passed to upper layers");
 
 #define BA_WINDOW_BOUNDARY 2048
@@ -34,11 +39,6 @@ MODULE_PARM_DESC(ba_mpdu_reorder_age_timeout, "Timeout (in ms) before a BA frame
 
 void slsi_rx_ba_init(struct slsi_dev *sdev)
 {
-	int i;
-
-	for (i = 0; i < SLSI_MAX_RX_BA_SESSIONS; i++)
-		slsi_spinlock_create(&sdev->rx_ba_buffer_pool[i].ba_lock);
-
 	slsi_spinlock_create(&sdev->rx_ba_buffer_pool_lock);
 }
 
@@ -92,29 +92,21 @@ static void slsi_rx_ba_free_buffer(struct net_device *dev, struct slsi_peer *pee
  * is called in the data workqueue context with the
  * netdev_vif mutex held.
  */
-void slsi_ba_process_complete(struct net_device *dev, bool from_ba_timer)
+void slsi_ba_process_complete(struct net_device *dev, bool ctx_napi)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct sk_buff    *skb;
 
-	while ((skb = slsi_skb_dequeue(&ndev_vif->ba_complete)) != NULL)
-		slsi_rx_data_deliver_skb(ndev_vif->sdev, dev, skb, from_ba_timer);
+	while ((skb = skb_dequeue(&ndev_vif->ba_complete)) != NULL)
+		slsi_rx_data_deliver_skb(ndev_vif->sdev, dev, skb, ctx_napi);
 }
 
 static void slsi_ba_signal_process_complete(struct net_device *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-#ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	struct slsi_dev *sdev = ndev_vif->sdev;
-	u32 conf_hip4_ver = 0;
-#endif
 
 	atomic_set(&ndev_vif->ba_flush, 1);
-#ifdef CONFIG_SCSC_WLAN_RX_NAPI
-	conf_hip4_ver = scsc_wifi_get_hip_config_version(&sdev->hip4_inst.hip_control->init);
-	if (conf_hip4_ver == 5)
-		slsi_skb_schedule_work(&ndev_vif->rx_data);
-#else
+#ifndef CONFIG_SCSC_WLAN_RX_NAPI
 	slsi_skb_schedule_work(&ndev_vif->rx_data);
 #endif
 }
@@ -123,7 +115,7 @@ static void ba_add_frame_to_ba_complete(struct net_device *dev, struct slsi_ba_f
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
-	slsi_skb_queue_tail(&ndev_vif->ba_complete, frame_desc->signal);
+	skb_queue_tail(&ndev_vif->ba_complete, frame_desc->signal);
 }
 
 static void ba_update_expected_sn(struct net_device *dev,
@@ -218,7 +210,10 @@ static int ba_consume_frame_or_get_buffer_index(struct net_device *dev, struct s
 			if (ba_session_rx->buffer[i].active) {
 				SLSI_NET_DBG3(dev, SLSI_RX_BA, "free frame at i = %d\n", i);
 				i = -1;
-				slsi_kfree_skb(frame_desc->signal);
+#ifdef CONFIG_SCSC_SMAPPER
+				hip4_smapper_free_mapped_skb(frame_desc->signal);
+#endif
+				kfree_skb(frame_desc->signal);
 			}
 		}
 		if (!IS_SN_LESS(sn, ba_session_rx->highest_received_sn))
@@ -255,7 +250,10 @@ static int ba_consume_frame_or_get_buffer_index(struct net_device *dev, struct s
 						slsi_fill_enhanced_arp_out_of_order_drop_counter(ndev_vif,
 												 frame_desc->signal);
 #endif
-					slsi_kfree_skb(frame_desc->signal);
+#ifdef CONFIG_SCSC_SMAPPER
+					hip4_smapper_free_mapped_skb(frame_desc->signal);
+#endif
+					kfree_skb(frame_desc->signal);
 				}
 			}
 		}
@@ -278,15 +276,11 @@ static void slsi_ba_aging_timeout_handler(unsigned long data)
 	u8                        gap = 1;
 	u16                       temp_sn;
 	struct net_device         *dev = ba_session_rx->dev;
-#ifdef CONFIG_SCSC_WLAN_RX_NAPI
 	struct netdev_vif         *ndev_vif = netdev_priv(dev);
-	struct slsi_dev           *sdev = ndev_vif->sdev;
-	u32                       conf_hip4_ver = 0;
-#endif
 
 	SLSI_NET_DBG3(dev, SLSI_RX_BA, "\n");
 
-	slsi_spinlock_lock(&ba_session_rx->ba_lock);
+	slsi_spinlock_lock(&ndev_vif->ba_lock);
 
 	ba_session_rx->timer_on = false;
 
@@ -317,30 +311,26 @@ static void slsi_ba_aging_timeout_handler(unsigned long data)
 		}
 
 		/* Check for next hole in the buffer, if hole exists create the timer for next missing frame */
-		if (ba_session_rx->occupied_slots) {
+		/* do not rearm the timer if BA session is going down */
+		if (ba_session_rx->active && ba_session_rx->occupied_slots) {
 			SLSI_NET_DBG3(dev, SLSI_RX_BA, "Timer start\n");
 			mod_timer(&ba_session_rx->ba_age_timer, jiffies + msecs_to_jiffies(ba_mpdu_reorder_age_timeout));
 			ba_session_rx->timer_on = true;
 		}
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
 		/* Process the data now marked as completed */
 #ifdef CONFIG_SCSC_WLAN_RX_NAPI
-		conf_hip4_ver = scsc_wifi_get_hip_config_version(&sdev->hip4_inst.hip_control->init);
-		if (conf_hip4_ver == 4)
-			slsi_ba_process_complete(dev, true);
-		else
-			slsi_ba_signal_process_complete(dev);
+		slsi_ba_process_complete(dev, false);
 #else
 		slsi_ba_signal_process_complete(dev);
 #endif
-	} else {
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
 	}
+	slsi_spinlock_unlock(&ndev_vif->ba_lock);
 }
 
 int slsi_ba_process_frame(struct net_device *dev, struct slsi_peer *peer,
 			  struct sk_buff *skb, u16 sequence_number, u16 tid)
 {
+	struct netdev_vif         *ndev_vif = netdev_priv(dev);
 	int                       i;
 	struct slsi_ba_session_rx *ba_session_rx = peer->ba_session_rx[tid];
 	struct slsi_ba_frame_desc frame_desc;
@@ -356,11 +346,11 @@ int slsi_ba_process_frame(struct net_device *dev, struct slsi_peer *peer,
 	if (!ba_session_rx)
 		return -EINVAL;
 
-	slsi_spinlock_lock(&ba_session_rx->ba_lock);
+	slsi_spinlock_lock(&ndev_vif->ba_lock);
 
 	if (!ba_session_rx->active) {
 		SLSI_NET_ERR(dev, "No BA session exists\n");
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
+		slsi_spinlock_unlock(&ndev_vif->ba_lock);
 		return -EINVAL;
 	}
 
@@ -411,11 +401,11 @@ int slsi_ba_process_frame(struct net_device *dev, struct slsi_peer *peer,
 
 	if (stop_timer) {
 		ba_session_rx->timer_on = false;
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
+		slsi_spinlock_unlock(&ndev_vif->ba_lock);
 		SLSI_NET_DBG4(dev, SLSI_RX_BA, "Timer stop\n");
 		del_timer_sync(&ba_session_rx->ba_age_timer);
 	} else {
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
+		slsi_spinlock_unlock(&ndev_vif->ba_lock);
 	}
 	slsi_ba_signal_process_complete(dev);
 	return 0;
@@ -451,31 +441,36 @@ static void __slsi_rx_ba_stop(struct net_device *dev, struct slsi_ba_session_rx 
 			FREE_BUFFER_SLOT(ba_session_rx, i);
 		}
 	}
+
+#ifdef CONFIG_SCSC_WLAN_RX_NAPI
+	slsi_ba_process_complete(dev, false);
+#else
+	 slsi_ba_signal_process_complete(dev);
+#endif
+
 	ba_session_rx->active = false;
 }
 
 static void slsi_rx_ba_stop_lock_held(struct net_device *dev, struct slsi_ba_session_rx *ba_session_rx)
 {
+	struct netdev_vif		  *ndev_vif = netdev_priv(dev);
+
 	__slsi_rx_ba_stop(dev, ba_session_rx);
-	if (ba_session_rx->timer_on) {
-		ba_session_rx->timer_on = false;
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
-		del_timer_sync(&ba_session_rx->ba_age_timer);
-		slsi_spinlock_lock(&ba_session_rx->ba_lock);
-	}
+	ba_session_rx->timer_on = false;
+	slsi_spinlock_unlock(&ndev_vif->ba_lock);
+	del_timer_sync(&ba_session_rx->ba_age_timer);
+	slsi_spinlock_lock(&ndev_vif->ba_lock);
 }
 
 static void slsi_rx_ba_stop_lock_unheld(struct net_device *dev, struct slsi_ba_session_rx *ba_session_rx)
 {
-	slsi_spinlock_lock(&ba_session_rx->ba_lock);
+	struct netdev_vif         *ndev_vif = netdev_priv(dev);
+
+	slsi_spinlock_lock(&ndev_vif->ba_lock);
 	__slsi_rx_ba_stop(dev, ba_session_rx);
-	if (ba_session_rx->timer_on) {
-		ba_session_rx->timer_on = false;
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
-		del_timer_sync(&ba_session_rx->ba_age_timer);
-	} else {
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
-	}
+	ba_session_rx->timer_on = false;
+	slsi_spinlock_unlock(&ndev_vif->ba_lock);
+	del_timer_sync(&ba_session_rx->ba_age_timer);
 }
 
 void slsi_rx_ba_stop_all(struct net_device *dev, struct slsi_peer *peer)
@@ -493,6 +488,8 @@ static int slsi_rx_ba_start(struct net_device *dev,
 			    struct slsi_ba_session_rx *ba_session_rx,
 			    u16 tid, u16 buffer_size, u16 start_sn)
 {
+	struct netdev_vif         *ndev_vif = netdev_priv(dev);
+
 	SLSI_NET_DBG1(dev, SLSI_RX_BA, "Request to start a new BA session tid=%d buffer_size=%d start_sn=%d\n",
 		      tid, buffer_size, start_sn);
 
@@ -501,7 +498,7 @@ static int slsi_rx_ba_start(struct net_device *dev,
 		return -EINVAL;
 	}
 
-	slsi_spinlock_lock(&ba_session_rx->ba_lock);
+	slsi_spinlock_lock(&ndev_vif->ba_lock);
 
 	if (ba_session_rx->active) {
 		SLSI_NET_DBG1(dev, SLSI_RX_BA, "BA session already exists\n");
@@ -511,9 +508,7 @@ static int slsi_rx_ba_start(struct net_device *dev,
 			SLSI_NET_DBG1(dev, SLSI_RX_BA,
 				      "BA session tid=%d already exists. The parameters match so keep the existing session\n",
 				      tid);
-
-			slsi_spinlock_unlock(&ba_session_rx->ba_lock);
-
+			slsi_spinlock_unlock(&ndev_vif->ba_lock);
 			return 0;
 		}
 		SLSI_NET_DBG1(dev, SLSI_RX_BA, "Parameters don't match so stop the existing BA session: tid=%d\n", tid);
@@ -540,7 +535,7 @@ static int slsi_rx_ba_start(struct net_device *dev,
 	SLSI_NET_DBG1(dev, SLSI_RX_BA, "Started a new BA session tid=%d buffer_size=%d start_sn=%d\n",
 		      tid, buffer_size, start_sn);
 
-	slsi_spinlock_unlock(&ba_session_rx->ba_lock);
+	slsi_spinlock_unlock(&ndev_vif->ba_lock);
 	slsi_ba_signal_process_complete(dev);
 
 	return 0;
@@ -549,18 +544,23 @@ static int slsi_rx_ba_start(struct net_device *dev,
 static void slsi_ba_process_error(struct net_device *dev,
 				  struct slsi_ba_session_rx *ba_session_rx, u16 sequence_number)
 {
-	slsi_spinlock_lock(&ba_session_rx->ba_lock);
+	struct netdev_vif		  *ndev_vif = netdev_priv(dev);
+
+	slsi_spinlock_lock(&ndev_vif->ba_lock);
 
 	if (WARN_ON(!ba_session_rx->active)) {
 		SLSI_NET_ERR(dev, "No BA session exists\n");
-		slsi_spinlock_unlock(&ba_session_rx->ba_lock);
+		slsi_spinlock_unlock(&ndev_vif->ba_lock);
 		return;
 	}
 
 	ba_scroll_window(dev, ba_session_rx, sequence_number);
-
-	slsi_spinlock_unlock(&ba_session_rx->ba_lock);
+#ifdef CONFIG_SCSC_WLAN_RX_NAPI
+	slsi_ba_process_complete(dev, false);
+#else
 	slsi_ba_signal_process_complete(dev);
+#endif
+	slsi_spinlock_unlock(&ndev_vif->ba_lock);
 }
 
 void slsi_handle_blockack(struct net_device *dev, struct slsi_peer *peer,

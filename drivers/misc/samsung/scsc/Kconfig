@@ -149,6 +149,11 @@ config SCSC_WIFILOGGER_DEBUGFS
 	depends on SCSC_WIFILOGGER && DEBUG_FS
 	default y
 
+config SCSC_LOGRING_DEBUGFS
+	bool "Samsung SCSC Logring DebugFS"
+	depends on SCSC_LOGRING && DEBUG_FS
+	default y
+
 config SCSC_WIFILOGGER_TEST
 	bool "Samsung SCSC Android Wi-Fi Logger Test Harness"
 	depends on SCSC_WIFILOGGER && SCSC_WIFILOGGER_DEBUGFS
@@ -181,3 +186,23 @@ config SCSC_MX450_GDB_SUPPORT
 	default n
 	---help---
 	  Enable GDB Channels for MX450
+
+config SCSC_WLAN_FAST_RECOVERY
+        bool "Enable fast recovery"
+        default n
+        ---help---
+        This option tells if fast recovery is enabled or not.
+
+config SCSC_LAST_PANIC_IN_DRAM
+        bool "Enable last panic in DRAM"
+        default n
+        ---help---
+        This option tells if WLBTd will copy the last Sable/panic
+	in DRAM
+
+config SCSC_WLBT_CFG_REQ_WQ
+	bool "Enable processing CFG REQ by Workqueue"
+	depends on SCSC_CORE
+	default n
+	---help---
+	Enable processing CFG REQ by Workqueue

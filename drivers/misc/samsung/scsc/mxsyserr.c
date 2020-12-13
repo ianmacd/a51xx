@@ -118,7 +118,7 @@ void mx_syserr_handler(struct mxman *mxman, const void *message)
 		/* We use 0 as a NULL timestamp so avoid this */
 		now = (now) ? now : 1;
 
-		if ((decode.level == MX_SYSERR_LEVEL_7) || (mxman->syserr_recovery_in_progress)) {
+		if ((decode.level >= MX_SYSERR_LEVEL_7) || (mxman->syserr_recovery_in_progress)) {
 			/* If full reset has been requested or a service restart is needed and one is
 			 * already in progress, trigger a full reset
 			 */
