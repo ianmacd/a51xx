@@ -18,6 +18,8 @@
 #include <linux/page_idle.h>
 #include <linux/shmem_fs.h>
 #include <linux/uaccess.h>
+#include <linux/mm_inline.h>
+#include <linux/ctype.h>
 
 #include <asm/elf.h>
 #include <asm/tlb.h>
@@ -1706,6 +1708,9 @@ static int reclaim_pte_range(pmd_t *pmd, unsigned long addr,
 	if (pmd_trans_unstable(pmd))
 		return 0;
 cont:
+	if (rwsem_is_contended(&walk->mm->mmap_sem))
+		return -1;
+
 	isolated = 0;
 	pte = pte_offset_map_lock(vma->vm_mm, pmd, addr, &ptl);
 	for (; addr != end; pte++, addr += PAGE_SIZE) {
@@ -1717,11 +1722,29 @@ cont:
 		if (!page)
 			continue;
 
+		if (PageUnevictable(page))
+			continue;
+
+		if (!PageLRU(page))
+			continue;
+
 		if (isolate_lru_page(page))
 			continue;
 
+		/* MADV_FREE clears pte dirty bit and then marks the page
+		 * lazyfree (clear SwapBacked). Inbetween if this lazyfreed page
+		 * is touched by user then it becomes dirty.  PPR in
+		 * shrink_page_list in try_to_unmap finds the page dirty, marks
+		 * it back as PageSwapBacked and skips reclaim. This can cause
+		 * isolated count mismatch.
+		 */
+		if (PageAnon(page) && !PageSwapBacked(page)) {
+			putback_lru_page(page);
+			continue;
+		}
+
 		list_add(&page->lru, &page_list);
-		inc_zone_page_state(page, NR_ISOLATED_ANON +
+		inc_node_page_state(page, NR_ISOLATED_ANON +
 				page_is_file_cache(page));
 		isolated++;
 		if (isolated >= SWAP_CLUSTER_MAX)
@@ -1826,9 +1849,10 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 				continue;
 
 			reclaim_walk.private = vma;
-			walk_page_range(max(vma->vm_start, start),
+			if (walk_page_range(max(vma->vm_start, start),
 					min(vma->vm_end, end),
-					&reclaim_walk);
+					&reclaim_walk))
+				break;
 			vma = vma->vm_next;
 		}
 	} else {
@@ -1843,8 +1867,9 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 				continue;
 
 			reclaim_walk.private = vma;
-			walk_page_range(vma->vm_start, vma->vm_end,
-				&reclaim_walk);
+			if (walk_page_range(vma->vm_start, vma->vm_end,
+				&reclaim_walk))
+				break;
 		}
 	}
 	flush_tlb_mm(mm);

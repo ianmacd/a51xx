@@ -369,6 +369,7 @@ typedef struct sec_battery_platform_data {
 	/* NO NEED TO BE CHANGED */
 	unsigned int pre_afc_input_current;
 	unsigned int pre_wc_afc_input_current;
+	unsigned int select_pd_input_current;
 	unsigned int store_mode_max_input_power;
 	unsigned int prepare_ta_delay;
 
@@ -790,6 +791,7 @@ struct sec_battery_info {
 	struct pdic_notifier_struct pdic_info;
 	struct sec_bat_pdic_list pd_list;
 #endif
+	bool update_pd_list;
 #if defined(CONFIG_VBUS_NOTIFIER)
 	struct notifier_block vbus_nb;
 	int muic_vbus_status;
@@ -970,6 +972,8 @@ struct sec_battery_info {
 	int muic_cable_type;
 	int extended_cable_type;
 
+	bool pd_disable_by_afc_option;
+
 #if defined(CONFIG_BATTERY_SAMSUNG_MHS)
 	int charging_port;
 #endif
@@ -990,6 +994,8 @@ struct sec_battery_info {
 	struct wake_lock wc_headroom_wake_lock;
 	struct wake_lock wpc_tx_wake_lock;
 	struct delayed_work wpc_tx_work;
+	struct wake_lock hv_disable_wake_lock;
+	struct delayed_work hv_disable_work;
 #if defined(CONFIG_UPDATE_BATTERY_DATA)
 	struct delayed_work batt_data_work;
 	struct wake_lock batt_data_wake_lock;

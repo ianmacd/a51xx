@@ -43,6 +43,8 @@
 #include <linux/battery/battery_notifier.h>
 #endif
 
+#define I2C_RETRY_CNT	3
+
 #if defined(CONFIG_CCIC_NOTIFIER)
 static enum ccic_sysfs_property sm5713_sysfs_properties[] = {
 	CCIC_SYSFS_PROP_CHIP_NAME,
@@ -77,13 +79,18 @@ static int sm5713_usbpd_reg_init(struct sm5713_phydrv_data *_data);
 
 static int sm5713_usbpd_read_reg(struct i2c_client *i2c, u8 reg, u8 *dest)
 {
-	int ret;
+	int ret, i;
 	struct device *dev = &i2c->dev;
 #if defined(CONFIG_USB_HW_PARAM)
 	struct otg_notify *o_notify = get_otg_notify();
 #endif
 
-	ret = i2c_smbus_read_byte_data(i2c, reg);
+	for (i = 0; i < I2C_RETRY_CNT; i++) {
+		ret = i2c_smbus_read_byte_data(i2c, reg);
+		if (ret >= 0)
+			break;
+		pr_info("%s reg(0x%x), ret(%d)\n", __func__, reg, ret);
+	}
 	if (ret < 0) {
 #if defined(CONFIG_USB_HW_PARAM)
 		if (o_notify)
@@ -99,13 +106,18 @@ static int sm5713_usbpd_read_reg(struct i2c_client *i2c, u8 reg, u8 *dest)
 
 static int sm5713_usbpd_write_reg(struct i2c_client *i2c, u8 reg, u8 value)
 {
-	int ret;
+	int ret, i;
 	struct device *dev = &i2c->dev;
 #if defined(CONFIG_USB_HW_PARAM)
 	struct otg_notify *o_notify = get_otg_notify();
 #endif
 
-	ret = i2c_smbus_write_byte_data(i2c, reg, value);
+	for (i = 0; i < I2C_RETRY_CNT; i++) {
+		ret = i2c_smbus_write_byte_data(i2c, reg, value);
+		if (ret >= 0)
+			break;
+		pr_info("%s reg(0x%x), ret(%d)\n", __func__, reg, ret);
+	}
 	if (ret < 0) {
 #if defined(CONFIG_USB_HW_PARAM)
 		if (o_notify)
@@ -119,13 +131,18 @@ static int sm5713_usbpd_write_reg(struct i2c_client *i2c, u8 reg, u8 value)
 static int sm5713_usbpd_multi_read(struct i2c_client *i2c,
 		u8 reg, int count, u8 *buf)
 {
-	int ret;
+	int ret, i;
 	struct device *dev = &i2c->dev;
 #if defined(CONFIG_USB_HW_PARAM)
 	struct otg_notify *o_notify = get_otg_notify();
 #endif
 
-	ret = i2c_smbus_read_i2c_block_data(i2c, reg, count, buf);
+	for (i = 0; i < I2C_RETRY_CNT; i++) {
+		ret = i2c_smbus_read_i2c_block_data(i2c, reg, count, buf);
+		if (ret >= 0)
+			break;
+		pr_info("%s reg(0x%x), ret(%d)\n", __func__, reg, ret);
+	}
 	if (ret < 0) {
 #if defined(CONFIG_USB_HW_PARAM)
 		if (o_notify)
@@ -140,13 +157,18 @@ static int sm5713_usbpd_multi_read(struct i2c_client *i2c,
 static int sm5713_usbpd_multi_write(struct i2c_client *i2c,
 		u8 reg, int count, u8 *buf)
 {
-	int ret;
+	int ret, i;
 	struct device *dev = &i2c->dev;
 #if defined(CONFIG_USB_HW_PARAM)
 	struct otg_notify *o_notify = get_otg_notify();
 #endif
 
-	ret = i2c_smbus_write_i2c_block_data(i2c, reg, count, buf);
+	for (i = 0; i < I2C_RETRY_CNT; i++) {
+		ret = i2c_smbus_write_i2c_block_data(i2c, reg, count, buf);
+		if (ret >= 0)
+			break;
+		pr_info("%s reg(0x%x), ret(%d)\n", __func__, reg, ret);
+	}
 	if (ret < 0) {
 #if defined(CONFIG_USB_HW_PARAM)
 		if (o_notify)
@@ -1091,6 +1113,9 @@ static int sm5713_port_type_set(const struct typec_capability *cap,
 #endif
 		usbpd_data->typec_try_state_change = TRY_ROLE_SWAP_TYPE;
 		sm5713_rprd_mode_change(usbpd_data, TYPE_C_ATTACH_UFP);
+	} else if (port_type == TYPEC_PORT_DRP) {
+		pr_info("%s : set to DRP (No action)\n", __func__);
+		return 0;
 	} else {
 		pr_info("%s : invalid typec_role\n", __func__);
 		return -EIO;
@@ -2764,6 +2789,8 @@ static int sm5713_usbpd_notify_attach(void *data)
 		dev_info(dev, "ccstat : cc_AUDIO\n");
 		manager->acc_type = CCIC_DOCK_UNSUPPORTED_AUDIO;
 		sm5713_usbpd_check_accessory(manager);
+	} else if ((reg_data & SM5713_ATTACH_TYPE) == SM5713_ATTACH_DEBUG) {
+		dev_info(dev, "ccstat : cc_DEBUG\n");
 	} else {
 		dev_err(dev, "%s, PLUG Error\n", __func__);
 		return -1;
@@ -3045,7 +3072,8 @@ static int sm5713_usbpd_reg_init(struct sm5713_phydrv_data *_data)
 	sm5713_usbpd_write_reg(i2c, SM5713_REG_CORR_CNTL4, 0x92);
 #endif
 	/* BMC Receiver Threshold Level for Source = 0.49V, 0.77V */
-	sm5713_usbpd_write_reg(i2c, 0xEE, 0x20);
+	/* Debug Accessory Sink Recognition Enable */
+	sm5713_usbpd_write_reg(i2c, 0xEE, 0x28);
 	sm5713_usbpd_write_reg(i2c, 0x3D, 0x77);
 	/* BMC Receiver Threshold Level for Sink = 0.25V, 0.49V */
 	sm5713_usbpd_write_reg(i2c, 0x3E, 0x01);

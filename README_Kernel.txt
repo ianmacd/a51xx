@@ -3,6 +3,8 @@
         - get Toolchain
                 From android git server, codesourcery and etc ..
                 - gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+                - android/prebuilts/clang/host/linux-x86/clang-4639204/
+                
         - edit Makefile
                 edit "CROSS_COMPILE" to right toolchain path(You downloaded).
                         EX)  CROSS_COMPILE=<android platform directory you download>/android/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
@@ -14,7 +16,8 @@
                         EX)  CLANG_TRIPLE=<android platform directory you download>/android/prebuilts/clang/host/linux-x86/clang-4639204/bin/aarch64-linux-gnu-
                         EX)  CLANG_TRIPLE=/usr/local/toolchain/clang/host/linux-x86/clang-4639204/bin/aarch64-linux-gnu- // check the location of toolchain     
         - to Build
-                $ export ANDROID_MAJOR_VERSION=q
+                $ export PLATFORM_VERSION=11
+                $ export ANDROID_MAJOR_VERSION=r
                 $ export ARCH=arm64
                 $ make exynos9610-a51xx_defconfig
                 $ make
