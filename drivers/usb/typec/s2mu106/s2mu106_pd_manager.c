@@ -187,11 +187,10 @@ int usbpd_manager_select_pps(int num, int ppsVol, int ppsCur)
 #endif
 	pd_noti.sink_status.selected_pdo_num = num;
 
-	if (ppsVol > pd_noti.sink_status.power_list[num].max_voltage ||
-			ppsVol > MAX_CHARGING_VOLT) {
+	if (ppsVol > pd_noti.sink_status.power_list[num].max_voltage) {
 		pr_info("%s: ppsVol is over(%d, max:%d)\n",
 			__func__, ppsVol, pd_noti.sink_status.power_list[num].max_voltage);
-		ppsVol = PD_MIN(pd_noti.sink_status.power_list[num].max_voltage, MAX_CHARGING_VOLT);
+		ppsVol = pd_noti.sink_status.power_list[num].max_voltage;
 	} else if (ppsVol < pd_noti.sink_status.power_list[num].min_voltage) {
 		pr_info("%s: ppsVol is under(%d, min:%d)\n",
 			__func__, ppsVol, pd_noti.sink_status.power_list[num].min_voltage);
@@ -1337,6 +1336,34 @@ data_obj_type usbpd_manager_select_capability(struct usbpd_data *pd_data)
 	return	>0	: request object number
 		0	: no selected option
 */
+int usbpd_manager_get_selected_voltage(struct usbpd_data *pd_data, int selected_pdo)
+{
+#if defined(CONFIG_BATTERY_SAMSUNG) && defined(CONFIG_USB_TYPEC_MANAGER_NOTIFIER)
+	PDIC_SINK_STATUS *pdic_sink_status = &pd_noti.sink_status;
+
+	int available_pdo = pdic_sink_status->available_pdo_num;
+	int volt = 0;
+
+	if (selected_pdo > available_pdo) {
+		pr_info("%s, selected:%d, available:%d\n", __func__, selected_pdo, available_pdo);
+		return 0;
+	}
+
+#if defined(CONFIG_PDIC_PD30)
+	if (pdic_sink_status->power_list[selected_pdo].apdo) {
+		pr_info("%s, selected pdo is apdo(%d)\n", __func__, selected_pdo);
+		return 0;
+	}
+#endif
+
+	volt = pdic_sink_status->power_list[selected_pdo].max_voltage;
+	pr_info("%s, select_pdo : %d, selected_voltage : %dmV\n", __func__, selected_pdo, volt);
+
+	return volt;
+#else
+	return 0;
+#endif
+}
 int usbpd_manager_evaluate_capability(struct usbpd_data *pd_data)
 {
 	struct policy_data *policy = &pd_data->policy;
@@ -1424,7 +1451,7 @@ int usbpd_manager_evaluate_capability(struct usbpd_data *pd_data)
 		pdic_sink_status->has_apdo = false;
 	}
 	pr_info("%s, flash(%d), available(%d), has_apdo(%d)\n", __func__, manager->flash_mode,
-			available_pdo_num, pdic_sink_status->has_apdo);
+		available_pdo_num, pdic_sink_status->has_apdo);
 	pdic_sink_status->available_pdo_num = available_pdo_num;
 	return available_pdo_num;
 #endif

@@ -884,7 +884,7 @@ static int psy_chg_get_health(struct sm5440_charger *sm5440)
 		if (op_mode == 0x0) {
 			adc_vbus = sm5440_convert_adc(sm5440, SM5440_ADC_VBUS);
 			if (adc_vbus < 3800) {
-				health = POWER_SUPPLY_HEALTH_UNDERVOLTAGE;
+				health = POWER_SUPPLY_HEALTH_DC_ERR;
 			} else {
 				health = POWER_SUPPLY_HEALTH_GOOD;
 			}
@@ -894,12 +894,8 @@ static int psy_chg_get_health(struct sm5440_charger *sm5440)
 			sm5440_read_reg(sm5440, SM5440_REG_STATUS3, &reg);
 			if ((reg >> 5) & 0x1) {
 				health = POWER_SUPPLY_HEALTH_GOOD;
-			} else {
-				if ((reg >> 7) & 0x1) {
-					health = POWER_SUPPLY_HEALTH_OVERVOLTAGE;
-				} else if ((reg >> 6) & 0x1) {
-					health = POWER_SUPPLY_HEALTH_UNDERVOLTAGE;
-				}
+			} else if (((reg >> 6) & 0x1) || ((reg >> 7) & 0x1)) {
+				health = POWER_SUPPLY_HEALTH_DC_ERR;
 			}
 			dev_info(sm5440->dev, "%s: op_mode=%d, status3=0x%x, health=%d\n",
 					__func__, op_mode, reg, health);

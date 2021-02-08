@@ -539,6 +539,7 @@ static ssize_t sm5713_muic_show_attached_dev(struct device *dev,
 		return sprintf(buf, "AUDIODOCK\n");
 	case ATTACHED_DEV_CHARGING_CABLE_MUIC:
 		return sprintf(buf, "PS CABLE\n");
+	case ATTACHED_DEV_AFC_CHARGER_DISABLED_MUIC:
 	case ATTACHED_DEV_AFC_CHARGER_5V_MUIC:
 	case ATTACHED_DEV_AFC_CHARGER_9V_MUIC:
 	case ATTACHED_DEV_QC_CHARGER_5V_MUIC:
@@ -748,8 +749,28 @@ static ssize_t sm5713_muic_set_afc_disable(struct device *dev,
 	pr_err("%s:set_param is NOT supported!\n", __func__);
 #endif
 
-	pr_info("[%s:%s] afc_disable(%d)\n",
-		MUIC_DEV_NAME, __func__, pdata->afc_disable);
+	pr_info("[%s:%s] attached_dev(%d), afc_disable(%d)\n",
+		MUIC_DEV_NAME, __func__, muic_data->attached_dev, pdata->afc_disable);
+
+	if (pdata->afc_disable) {
+		if (muic_data->attached_dev == ATTACHED_DEV_AFC_CHARGER_9V_MUIC ||
+			muic_data->attached_dev == ATTACHED_DEV_AFC_CHARGER_PREPARE_MUIC ||
+			muic_data->attached_dev == ATTACHED_DEV_AFC_CHARGER_5V_MUIC ||
+			muic_data->attached_dev == ATTACHED_DEV_QC_CHARGER_9V_MUIC ||
+			muic_data->attached_dev == ATTACHED_DEV_QC_CHARGER_PREPARE_MUIC ||
+			muic_data->attached_dev == ATTACHED_DEV_QC_CHARGER_5V_MUIC ||
+			muic_data->attached_dev == ATTACHED_DEV_AFC_CHARGER_DISABLED_MUIC) {
+			sm5713_set_afc_ctrl_reg(muic_data, AFCCTRL_DP_RESET, 1);  /*DP_RESET*/
+			msleep(50);
+
+			muic_data->attached_dev = ATTACHED_DEV_AFC_CHARGER_DISABLED_MUIC;
+			muic_notifier_attach_attached_dev(muic_data->attached_dev);
+		}
+	} else {
+		if (muic_data->attached_dev == ATTACHED_DEV_TA_MUIC ||
+			muic_data->attached_dev == ATTACHED_DEV_AFC_CHARGER_DISABLED_MUIC)
+			sm5713_set_afc_ctrl_reg(muic_data, AFCCTRL_DP_RESET, 1);  /*DP_RESET*/
+	}
 
 	return count;
 }
@@ -1140,6 +1161,8 @@ static void sm5713_muic_BCD_rescan(struct sm5713_muic_data *muic_data)
 {
 	struct i2c_client *i2c = muic_data->i2c;
 	int reg_ctrl1 = 0, reg_ctrl2 = 0;
+
+	com_to_open(muic_data);
 
 	pr_info("[%s:%s] BCD_RESCAN\n", MUIC_DEV_NAME, __func__);
 
@@ -1569,6 +1592,7 @@ static void sm5713_muic_handle_detach(struct sm5713_muic_data *muic_data,
 		break;
 	case ATTACHED_DEV_TA_MUIC:
 	case ATTACHED_DEV_AFC_CHARGER_PREPARE_MUIC:
+	case ATTACHED_DEV_AFC_CHARGER_DISABLED_MUIC:
 	case ATTACHED_DEV_AFC_CHARGER_PREPARE_DUPLI_MUIC:
 	case ATTACHED_DEV_AFC_CHARGER_5V_MUIC:
 	case ATTACHED_DEV_AFC_CHARGER_5V_DUPLI_MUIC:
@@ -2521,7 +2545,7 @@ static int sm5713_muic_probe(struct platform_device *pdev)
 	wake_lock_init(&muic_data->wake_lock, WAKE_LOCK_SUSPEND, "muic_wake");
 
 	if (muic_data->pdata->init_gpio_cb)
-		ret = muic_data->pdata->init_gpio_cb(get_switch_sel());
+		ret = muic_data->pdata->init_gpio_cb(NULL, get_switch_sel());
 	if (ret) {
 		pr_err("[%s:%s] failed to init gpio(%d)\n",
 				MUIC_DEV_NAME, __func__, ret);

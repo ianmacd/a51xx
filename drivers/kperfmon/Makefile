@@ -31,7 +31,7 @@ endif
 
 ifeq ($(FLAG), 1)
 $(info kperfmon_DUMMY="$(shell cp -f $(srctree)/../../system/core/liblog/include/log/perflog.h  $(srctree)/drivers/kperfmon/)")
-	obj-y				+= kperfmon.o
+#	obj-y				+= kperfmon.o
 else
 	obj-y				+= ologk.o
 $(info kperfmon_DUMMY="$(shell cp -f $(srctree)/drivers/kperfmon/ologk.h $(srctree)/include/linux/)")
